@@ -160,7 +160,6 @@
             cursor:pointer;
             transition:0.3s;
             border:2px solid transparent;
-            position:relative;
         }
         .city-card:hover{
             border-color:var(--accent);
@@ -198,7 +197,6 @@
             cursor:pointer;
             transition:0.3s;
             border:2px solid transparent;
-            position:relative;
         }
         .pvz-card:hover{
             border-color:var(--accent);
@@ -333,7 +331,6 @@
             cursor:pointer;
             transition:0.3s;
             border:2px solid transparent;
-            position:relative;
         }
         .truck-card:hover{
             transform:translateY(-5px);
@@ -409,7 +406,6 @@
             padding:12px;
             text-align:left;
             border-bottom:1px solid var(--border);
-            position:relative;
         }
         .price-table th{
             background:var(--accent);
@@ -417,33 +413,6 @@
         }
         .price-table tr:hover{
             background:var(--bg);
-        }
-        .price-hint{
-            position:relative;
-            cursor:help;
-            border-bottom:1px dotted var(--accent);
-        }
-        .price-hint .hint-text{
-            visibility:hidden;
-            position:absolute;
-            bottom:100%;
-            left:50%;
-            transform:translateX(-50%);
-            background:#333;
-            color:#fff;
-            padding:8px 12px;
-            border-radius:6px;
-            font-size:12px;
-            white-space:nowrap;
-            opacity:0;
-            transition:0.3s;
-            pointer-events:none;
-            z-index:100;
-            margin-bottom:5px;
-        }
-        .price-hint:hover .hint-text{
-            visibility:visible;
-            opacity:1;
         }
         
         /* Инфо о компании */
@@ -464,11 +433,6 @@
         .info-block p{
             margin:8px 0;
             line-height:1.5;
-        }
-        .info-block i{
-            vertical-align:middle;
-            margin-right:10px;
-            color:var(--accent);
         }
         
         .calculate{
@@ -529,7 +493,7 @@
 <header>
     <div class="container header-inner">
         <div class="logo-block" onclick="window.location='index.html'">
-            <img src="images/logo.jpg" onerror="this.style.display='none'">
+            <img src="images/logo.png" onerror="this.style.display='none'">
             <h2>FurtherWind</h2>
         </div>
         <nav>
@@ -558,13 +522,14 @@
         
         <!-- Адреса и карта -->
         <h3>📍 Адреса</h3>
+        <p><small>Выберите ПВЗ для отправления и получения</small></p>
         <div class="address-boxes">
             <div class="address-box">
-                <input id="from" placeholder="Откуда">
+                <input id="from" placeholder="Пункт отправления (выберите на карте)" readonly>
                 <span class="clear-point" onclick="clearPoint('from')">✕</span>
             </div>
             <div class="address-box">
-                <input id="to" placeholder="Куда">
+                <input id="to" placeholder="Пункт получения (выберите на карте)" readonly>
                 <span class="clear-point" onclick="clearPoint('to')">✕</span>
             </div>
         </div>
@@ -572,10 +537,15 @@
         
         <!-- Города и ПВЗ -->
         <h3>🏢 Наши пункты выдачи заказов (ПВЗ)</h3>
-        <p><small>Выберите город, затем точку для отправления</small></p>
+        <p><small>Выберите город, затем точку для отправления или получения</small></p>
         
         <div class="cities-grid" id="citiesGrid"></div>
         <div class="pvz-grid" id="pvzGrid" style="display:none;"></div>
+        
+        <div style="display:flex; gap:10px; margin:10px 0;">
+            <button class="calculate" style="flex:1;" onclick="setAsFrom()">📍 Установить как ОТПРАВЛЕНИЕ</button>
+            <button class="calculate" style="flex:1;" onclick="setAsTo()">📍 Установить как ПОЛУЧЕНИЕ</button>
+        </div>
         
         <!-- Выбор типа груза -->
         <h3>📦 Что перевозим</h3>
@@ -603,32 +573,32 @@
             <h4>Выберите размер коробки</h4>
             <div class="select-package">
                 <div class="package-card" data-dim="17x12x9" data-weight="0.5" onclick="selectPackage(this)">
-                    <img src="images/packagexs.svg" onerror="this.textContent='📦'">
+                    <img src="images/Packagexs.svg" onerror="this.textContent='📦'">
                     <br>XS
                     <div class="hover-info">17×12×9 см, до 0.5 кг</div>
                 </div>
                 <div class="package-card" data-dim="23x19x10" data-weight="2" onclick="selectPackage(this)">
-                    <img src="images/packages.svg" onerror="this.textContent='📦'">
+                    <img src="images/Packages.svg" onerror="this.textContent='📦'">
                     <br>S
                     <div class="hover-info">23×19×10 см, до 2 кг</div>
                 </div>
                 <div class="package-card" data-dim="33x25x15" data-weight="5" onclick="selectPackage(this)">
-                    <img src="images/packagem.svg" onerror="this.textContent='📦'">
+                    <img src="images/Packagem.svg" onerror="this.textContent='📦'">
                     <br>M
                     <div class="hover-info">33×25×15 см, до 5 кг</div>
                 </div>
                 <div class="package-card" data-dim="31x25x38" data-weight="12" onclick="selectPackage(this)">
-                    <img src="images/packagel.svg" onerror="this.textContent='📦'">
+                    <img src="images/Packagel.svg" onerror="this.textContent='📦'">
                     <br>L
                     <div class="hover-info">31×25×38 см, до 12 кг</div>
                 </div>
                 <div class="package-card" data-dim="60x35x30" data-weight="18" onclick="selectPackage(this)">
-                    <img src="images/packagexl.svg" onerror="this.textContent='📦'">
+                    <img src="images/Packagexl.svg" onerror="this.textContent='📦'">
                     <br>XL
                     <div class="hover-info">60×35×30 см, до 18 кг</div>
                 </div>
                 <div class="package-card" data-dim="custom" data-weight="0" onclick="selectPackage(this)">
-                    <img src="images/fura.png" onerror="this.textContent='📐'">
+                    <img src="images/fura.jpg" onerror="this.textContent='📐'">
                     <br>Свой размер
                     <div class="hover-info">Свой размер</div>
                 </div>
@@ -646,42 +616,42 @@
         <div class="truck-type" id="truck-type" style="display:none;">
             <h4>Выберите транспорт</h4>
             <div class="truck-grid">
-                <div class="truck-card" data-name="S" data-km-rate="22.7" data-dim="170x90x100" data-weight="300">
+                <div class="truck-card" data-name="S" data-km-rate="22.7">
                     <img src="images/trucks.png" onerror="this.textContent='🚛'">
                     <b>S</b>
                     <div class="dimensions">Кузов: 170×90×100 см, до 300 кг</div>
                 </div>
-                <div class="truck-card" data-name="M" data-km-rate="22.7" data-dim="260x130x150" data-weight="700">
+                <div class="truck-card" data-name="M" data-km-rate="22.7">
                     <img src="images/truckm.png" onerror="this.textContent='🚛'">
                     <b>M</b>
                     <div class="dimensions">Кузов: 260×130×150 см, до 700 кг</div>
                 </div>
-                <div class="truck-card" data-name="L" data-km-rate="22.7" data-dim="380x180x180" data-weight="1400">
+                <div class="truck-card" data-name="L" data-km-rate="22.7">
                     <img src="images/truckl.png" onerror="this.textContent='🚛'">
                     <b>L</b>
                     <div class="dimensions">Кузов: 380×180×180 см, до 1400 кг</div>
                 </div>
-                <div class="truck-card" data-name="XL" data-km-rate="22.7" data-dim="400x190x200" data-weight="2000">
+                <div class="truck-card" data-name="XL" data-km-rate="22.7">
                     <img src="images/truckxl.png" onerror="this.textContent='🚛'">
                     <b>XL</b>
                     <div class="dimensions">Кузов: 400×190×200 см, до 2000 кг</div>
                 </div>
-                <div class="truck-card" data-name="Platform" data-km-rate="22.7" data-dim="13600x245x260" data-weight="20000">
+                <div class="truck-card" data-name="Platform" data-km-rate="22.7">
                     <img src="images/truckplatf.jpg" onerror="this.textContent='🚜'">
                     <b>Платформа</b>
                     <div class="dimensions">Прицеп: 13.6×2.45×2.6 м, до 20 т</div>
                 </div>
-                <div class="truck-card" data-name="Euro" data-km-rate="22.7" data-dim="13600x245x270" data-weight="20000">
+                <div class="truck-card" data-name="Euro" data-km-rate="22.7">
                     <img src="images/truckeuro.jpg" onerror="this.textContent='🚛'">
                     <b>Еврофура</b>
                     <div class="dimensions">Прицеп: 13.6×2.45×2.7 м, до 20 т</div>
                 </div>
-                <div class="truck-card" data-name="Refrigerator" data-km-rate="22.7" data-dim="13600x245x260" data-weight="18000">
+                <div class="truck-card" data-name="Refrigerator" data-km-rate="22.7">
                     <img src="images/truckref.jpg" onerror="this.textContent='❄️'">
                     <b>Рефрижератор</b>
                     <div class="dimensions">Прицеп: 13.6×2.45×2.6 м, до 18 т, -25°C</div>
                 </div>
-                <div class="truck-card" data-name="Isoterm" data-km-rate="22.7" data-dim="13600x245x260" data-weight="18000">
+                <div class="truck-card" data-name="Isoterm" data-km-rate="22.7">
                     <img src="images/truckisoterm.jpg" onerror="this.textContent='🌡️'">
                     <b>Изотермический</b>
                     <div class="dimensions">Прицеп: 13.6×2.45×2.6 м, до 18 т</div>
@@ -704,15 +674,15 @@
             <h3>🌍 Цены на международную доставку</h3>
             <table class="price-table">
                 <thead>
-                    <tr><th>Страна</th><th>Письмо (до 0.5 кг)</th><th>Посылка (до 2 кг)</th><th>Посылка (до 5 кг)</th><th>Груз (до 10 кг)</th></tr>
+                    <tr><th>Страна</th><th>Письмо (до 0.5 кг)</th><th>Посылка (до 2 кг)</th><th>Посылка (до 5 кг)</th><th>Груз (до 10 кг)</th> </tr>
                 </thead>
                 <tbody>
-                    <tr><td>🇧🇾 Беларусь</td><td class="price-hint">300₽ <span class="hint-text">Взятие: 100₽ + Вес: 60₽ + Доставка: 140₽</span></td><td class="price-hint">500₽ <span class="hint-text">Взятие: 100₽ + Вес: 120₽ + Доставка: 280₽</span></td><td class="price-hint">800₽ <span class="hint-text">Взятие: 100₽ + Вес: 300₽ + Доставка: 400₽</span></td><td class="price-hint">1200₽ <span class="hint-text">Взятие: 100₽ + Вес: 600₽ + Доставка: 500₽</span></td></tr>
-                    <tr><td>🇰🇿 Казахстан</td><td class="price-hint">350₽ <span class="hint-text">Взятие: 100₽ + Вес: 60₽ + Доставка: 190₽</span></td><td class="price-hint">600₽ <span class="hint-text">Взятие: 100₽ + Вес: 120₽ + Доставка: 380₽</span></td><td class="price-hint">900₽ <span class="hint-text">Взятие: 100₽ + Вес: 300₽ + Доставка: 500₽</span></td><td class="price-hint">1500₽ <span class="hint-text">Взятие: 100₽ + Вес: 600₽ + Доставка: 800₽</span></td></tr>
-                    <tr><td>🇨🇳 Китай</td><td class="price-hint">500₽ <span class="hint-text">Взятие: 100₽ + Вес: 60₽ + Доставка: 340₽</span></td><td class="price-hint">900₽ <span class="hint-text">Взятие: 100₽ + Вес: 120₽ + Доставка: 680₽</span></td><td class="price-hint">1500₽ <span class="hint-text">Взятие: 100₽ + Вес: 300₽ + Доставка: 1100₽</span></td><td class="price-hint">2500₽ <span class="hint-text">Взятие: 100₽ + Вес: 600₽ + Доставка: 1800₽</span></td></tr>
-                    <tr><td>🇹🇷 Турция</td><td class="price-hint">450₽ <span class="hint-text">Взятие: 100₽ + Вес: 60₽ + Доставка: 290₽</span></td><td class="price-hint">800₽ <span class="hint-text">Взятие: 100₽ + Вес: 120₽ + Доставка: 580₽</span></td><td class="price-hint">1300₽ <span class="hint-text">Взятие: 100₽ + Вес: 300₽ + Доставка: 900₽</span></td><td class="price-hint">2000₽ <span class="hint-text">Взятие: 100₽ + Вес: 600₽ + Доставка: 1300₽</span></td></tr>
-                    <tr><td>🇪🇺 Европа</td><td class="price-hint">600₽ <span class="hint-text">Взятие: 100₽ + Вес: 60₽ + Доставка: 440₽</span></td><td class="price-hint">1000₽ <span class="hint-text">Взятие: 100₽ + Вес: 120₽ + Доставка: 780₽</span></td><td class="price-hint">1800₽ <span class="hint-text">Взятие: 100₽ + Вес: 300₽ + Доставка: 1400₽</span></td><td class="price-hint">3000₽ <span class="hint-text">Взятие: 100₽ + Вес: 600₽ + Доставка: 2300₽</span></td></tr>
-                    <tr><td>🇺🇸 США</td><td class="price-hint">800₽ <span class="hint-text">Взятие: 100₽ + Вес: 60₽ + Доставка: 640₽</span></td><td class="price-hint">1500₽ <span class="hint-text">Взятие: 100₽ + Вес: 120₽ + Доставка: 1280₽</span></td><td class="price-hint">2500₽ <span class="hint-text">Взятие: 100₽ + Вес: 300₽ + Доставка: 2100₽</span></td><td class="price-hint">4000₽ <span class="hint-text">Взятие: 100₽ + Вес: 600₽ + Доставка: 3300₽</span></td></tr>
+                    <tr><td>🇧🇾 Беларусь</td><td>300₽</td><td>500₽</td><td>800₽</td><td>1200₽</td> </tr>
+                    <tr><td>🇰🇿 Казахстан</td><td>350₽</td><td>600₽</td><td>900₽</td><td>1500₽</td> </tr>
+                    <tr><td>🇨🇳 Китай</td><td>500₽</td><td>900₽</td><td>1500₽</td><td>2500₽</td> </tr>
+                    <tr><td>🇹🇷 Турция</td><td>450₽</td><td>800₽</td><td>1300₽</td><td>2000₽</td> </tr>
+                    <tr><td>🇪🇺 Европа</td><td>600₽</td><td>1000₽</td><td>1800₽</td><td>3000₽</td> </tr>
+                    <tr><td>🇺🇸 США</td><td>800₽</td><td>1500₽</td><td>2500₽</td><td>4000₽</td> </tr>
                 </tbody>
             </table>
         </div>
@@ -772,6 +742,7 @@ let selectedTruck = null;
 let selectedOptions = {};
 let currentPrice = 0;
 let currentDistance = 0;
+let selectedPVZ = null;
 
 // Счетчики для генерации номеров заказов
 let orderCounters = {
@@ -781,71 +752,52 @@ let orderCounters = {
     dedicated: 0
 };
 
-// Загрузка счетчиков из localStorage
 function loadCounters() {
     const saved = localStorage.getItem('orderCounters');
-    if (saved) {
-        orderCounters = JSON.parse(saved);
-    }
+    if (saved) orderCounters = JSON.parse(saved);
 }
-
 function saveCounters() {
     localStorage.setItem('orderCounters', JSON.stringify(orderCounters));
 }
 
-// Генерация номера заказа
 function generateOrderNumber(cargoType) {
-    let prefix = '';
-    switch(cargoType) {
-        case 'letter': prefix = 'LE'; break;
-        case 'package': prefix = 'PC'; break;
-        case 'move': prefix = 'PR'; break;
-        case 'dedicated': prefix = 'VT'; break;
-        default: prefix = 'FW';
-    }
-    
+    const prefix = { letter: 'LE', package: 'PC', move: 'PR', dedicated: 'VT' }[cargoType] || 'FW';
     orderCounters[cargoType] = (orderCounters[cargoType] || 0) + 1;
     saveCounters();
-    
-    const number = String(orderCounters[cargoType]).padStart(13, '0');
-    return `${prefix}${number}`;
+    return `${prefix}${String(orderCounters[cargoType]).padStart(13, '0')}`;
 }
 
-// Поиск пользователя по email или телефону
-async function findUserByContact(email, phone) {
+async function findOrCreateUser(email, phone, name) {
     if (!email && !phone) return null;
-    
     const cleanPhone = phone ? phone.replace(/\D/g, '') : '';
     
     let query = supabaseClient.from('profiles').select('id');
+    if (email && cleanPhone) query = query.or(`email.eq.${email},phone.eq.${cleanPhone}`);
+    else if (email) query = query.eq('email', email);
+    else if (cleanPhone) query = query.eq('phone', cleanPhone);
     
-    if (email && cleanPhone) {
-        query = query.or(`email.eq.${email},phone.eq.${cleanPhone}`);
-    } else if (email) {
-        query = query.eq('email', email);
-    } else if (cleanPhone) {
-        query = query.eq('phone', cleanPhone);
+    const { data: existing } = await query.maybeSingle();
+    if (existing) return existing;
+    
+    if (email) {
+        const { data: newUser } = await supabaseClient.auth.signUp({
+            email: email,
+            password: Math.random().toString(36).slice(-8),
+            options: { data: { full_name: name, phone: cleanPhone } }
+        });
+        if (newUser?.user) {
+            await supabaseClient.from('profiles').upsert({
+                id: newUser.user.id, full_name: name, phone: cleanPhone, email: email
+            });
+            return { id: newUser.user.id };
+        }
     }
-    
-    const { data, error } = await query.maybeSingle();
-    
-    if (error || !data) {
-        return null;
-    }
-    
-    return data;
+    return null;
 }
 
-// Сохранение заказа в Supabase
 async function saveOrder(orderData) {
-    const { error } = await supabaseClient
-        .from('orders')
-        .insert(orderData);
-    
-    if (error) {
-        console.error('Ошибка сохранения заказа:', error);
-        throw error;
-    }
+    const { error } = await supabaseClient.from('orders').insert(orderData);
+    if (error) throw error;
     return true;
 }
 
@@ -986,6 +938,34 @@ function clearPoint(type) {
 
 function clearAllPoints() { clearPoint('from'); clearPoint('to'); }
 
+function setAsFrom() {
+    if(selectedPVZ) {
+        if(fromMark) map.geoObjects.remove(fromMark);
+        fromMark = null;
+        createPlacemark('from', selectedPVZ.coords);
+        document.getElementById('from').value = selectedPVZ.address;
+        selectedPVZ = null;
+        document.querySelectorAll('.pvz-card').forEach(c => c.classList.remove('active'));
+        showNotification('Пункт отправления установлен');
+    } else {
+        alert('Сначала выберите ПВЗ');
+    }
+}
+
+function setAsTo() {
+    if(selectedPVZ) {
+        if(toMark) map.geoObjects.remove(toMark);
+        toMark = null;
+        createPlacemark('to', selectedPVZ.coords);
+        document.getElementById('to').value = selectedPVZ.address;
+        selectedPVZ = null;
+        document.querySelectorAll('.pvz-card').forEach(c => c.classList.remove('active'));
+        showNotification('Пункт получения установлен');
+    } else {
+        alert('Сначала выберите ПВЗ');
+    }
+}
+
 // ======================
 // ПВЗ
 // ======================
@@ -1053,10 +1033,10 @@ function selectCity(cityName) {
 }
 
 function selectPVZ(pvz) {
-    if(fromMark) map.geoObjects.remove(fromMark);
-    fromMark = null;
-    createPlacemark('from', pvz.coords);
-    map.setCenter(pvz.coords, 14);
+    document.querySelectorAll('.pvz-card').forEach(c => c.classList.remove('active'));
+    event.target.closest('.pvz-card').classList.add('active');
+    selectedPVZ = pvz;
+    showNotification(`Выбран ПВЗ: ${pvz.address}\nНажмите "Установить как ОТПРАВЛЕНИЕ" или "Установить как ПОЛУЧЕНИЕ"`);
 }
 
 document.addEventListener('DOMContentLoaded', renderCities);
@@ -1177,15 +1157,14 @@ async function sendOrder() {
     if(selectedCargo.type === 'dedicated' && !selectedTruck) { alert("Выберите транспорт"); return; }
     if(!currentPrice) { alert("Сначала рассчитайте стоимость"); return; }
     
-    // Генерируем номер заказа
     const orderNumber = generateOrderNumber(selectedCargo.type);
     
-    // Ищем пользователя
     const senderEmail = document.getElementById('sender_email').value;
     const senderPhone = document.getElementById('sender_phone').value;
-    const user = await findUserByContact(senderEmail, senderPhone);
+    const senderName = document.getElementById('sender_name').value;
     
-    // Формируем данные заказа
+    const user = await findOrCreateUser(senderEmail, senderPhone, senderName);
+    
     const orderData = {
         order_number: orderNumber,
         user_id: user?.id || null,
@@ -1194,7 +1173,7 @@ async function sendOrder() {
         to_address: document.getElementById('to').value,
         distance: Math.round(currentDistance),
         price: currentPrice,
-        sender_name: document.getElementById('sender_name').value,
+        sender_name: senderName,
         sender_phone: senderPhone,
         sender_email: senderEmail,
         receiver_name: document.getElementById('receiver_name').value,
@@ -1204,28 +1183,29 @@ async function sendOrder() {
         package_weight: selectedPackage?.weight,
         truck_type: selectedTruck?.name,
         options: JSON.stringify(selectedOptions),
-        status: 'pending'
+        status: 'pending_payment'
     };
     
     try {
         await saveOrder(orderData);
-        
-        // Сохраняем в localStorage для страницы оплаты
         localStorage.setItem('paymentAmount', currentPrice);
         localStorage.setItem('orderNumber', orderNumber);
         
-        // Показываем уведомление
         alert(`✅ Заказ оформлен!\nНомер заказа: ${orderNumber}\nСумма к оплате: ${currentPrice}₽\n\nВы будете перенаправлены на страницу оплаты.`);
-        
-        // Переход на страницу оплаты
         window.location.href = `payment.html?order_id=${orderNumber}`;
-        
     } catch (error) {
         alert('Ошибка при оформлении заказа: ' + error.message);
     }
 }
 
-// Инициализация
+function showNotification(message) {
+    const notif = document.createElement('div');
+    notif.style.cssText = `position:fixed;top:20px;right:20px;background:#4CAF50;color:white;padding:12px 20px;border-radius:8px;z-index:9999;animation:slideIn 0.3s;`;
+    notif.textContent = message;
+    document.body.appendChild(notif);
+    setTimeout(() => notif.remove(), 3000);
+}
+
 loadCounters();
 </script>
 </body>
