@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>FurtherWind — Детали заказа</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://api-maps.yandex.ru/2.1/?apikey=21a0a372-2599-476c-a069-77850517dfdb&lang=ru_RU"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        :root{ --bg:#fff; --text:#111; --card:#f3f3f3; --header:#fff; --accent:#00aaff; --border:#ddd; }
+        .dark{ --bg:#1f1f1f; --text:#fff; --card:#2a2a2a; --header:#111; --accent:#00aaff; --border:#444; }
+        
+        * { box-sizing: border-box; }
+        body{
+            margin:0;
+            font-family:Arial;
+            background:var(--bg);
+            color:var(--text);
+            transition:0.3s;
+            min-height:100vh;
+            display:flex;
+            flex-direction:column;
+        }
+        .container{
+            width:1200px;
+            max-width:95%;
+            margin:auto;
+            padding:20px 0;
+        }
+        
+        header{
+            background:var(--header);
+            padding:15px 0;
+            border-bottom:1px solid var(--border);
+            position:sticky;
+            top:0;
+            z-index:100;
+        }
+        .header-inner{
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            flex-wrap:wrap;
+        }
+        .logo-block{
+            display:flex;
+            align-items:center;
+            gap:15px;
+            cursor:pointer;
+        }
+        .logo-block img{
+            height:50px;
+        }
+        nav{
+            display:flex;
+            align-items:center;
+            gap:20px;
+            flex-wrap:wrap;
+        }
+        nav a{
+            color:var(--text);
+            text-decoration:none;
+            font-weight:bold;
+            padding:5px 10px;
+            border-radius:5px;
+            transition:0.3s;
+        }
+        nav a:hover{
+            background:var(--accent);
+            color:#fff;
+        }
+        .theme-toggle{
+            cursor:pointer;
+            margin-right:5px;
+        }
+        
+        .order-detail{
+            background:var(--card);
+            border-radius:20px;
+            overflow:hidden;
+        }
+        
+        .order-header{
+            background:var(--accent);
+            color:white;
+            padding:20px 30px;
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            flex-wrap:wrap;
+            gap:15px;
+        }
+        .order-number{
+            font-size:24px;
+            font-weight:bold;
+        }
+        .order-status{
+            padding:8px 20px;
+            border-radius:30px;
+            font-weight:bold;
+        }
+        .status-pending_payment{ background:#ffd700; color:#000; }
+        .status-paid{ background:#4CAF50; color:#fff; }
+        .status-processing{ background:var(--accent); color:#fff; }
+        .status-shipped{ background:#2196F3; color:#fff; }
+        .status-delivered{ background:#4CAF50; color:#fff; }
+        .status-cancelled{ background:#ff4444; color:#fff; }
+        
+        .order-content{
+            display:grid;
+            grid-template-columns:1fr 1fr;
+            gap:30px;
+            padding:30px;
+        }
+        
+        .info-section{
+            background:var(--bg);
+            border-radius:15px;
+            padding:20px;
+        }
+        .info-section h3{
+            margin-top:0;
+            color:var(--accent);
+            display:flex;
+            align-items:center;
+            gap:10px;
+            border-bottom:2px solid var(--border);
+            padding-bottom:10px;
+            margin-bottom:15px;
+        }
+        .info-row{
+            display:flex;
+            justify-content:space-between;
+            padding:10px 0;
+            border-bottom:1px solid var(--border);
+        }
+        .info-label{
+            font-weight:bold;
+            opacity:0.7;
+        }
+        .info-value{
+            text-align:right;
+        }
+        
+        .price-block{
+            background:var(--accent);
+            color:white;
+            padding:20px;
+            border-radius:15px;
+            text-align:center;
+            margin-top:20px;
+        }
+        .price-block .amount{
+            font-size:36px;
+            font-weight:bold;
+        }
+        
+        #map{
+            height:300px;
+            border-radius:15px;
+            margin-top:15px;
+        }
+        
+        .action-buttons{
+            display:flex;
+            gap:15px;
+            margin-top:30px;
+            flex-wrap:wrap;
+        }
+        .btn{
+            flex:1;
+            padding:14px;
+            border:none;
+            border-radius:10px;
+            font-size:16px;
+            font-weight:bold;
+            cursor:pointer;
+            transition:0.3s;
+        }
+        .btn-primary{
+            background:var(--accent);
+            color:#fff;
+        }
+        .btn-success{
+            background:#4CAF50;
+            color:#fff;
+        }
+        .btn-danger{
+            background:#ff4444;
+            color:#fff;
+        }
+        .btn-secondary{
+            background:#666;
+            color:#fff;
+        }
+        .btn:hover{
+            opacity:0.9;
+            transform:translateY(-2px);
+        }
+        
+        .tracking-steps{
+            display:flex;
+            justify-content:space-between;
+            margin:30px 0;
+            position:relative;
+        }
+        .tracking-steps::before{
+            content:'';
+            position:absolute;
+            top:20px;
+            left:0;
+            right:0;
+            height:2px;
+            background:var(--border);
+            z-index:1;
+        }
+        .step{
+            position:relative;
+            z-index:2;
+            text-align:center;
+            flex:1;
+        }
+        .step-dot{
+            width:40px;
+            height:40px;
+            background:var(--bg);
+            border:2px solid var(--border);
+            border-radius:50%;
+            margin:0 auto 10px;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            transition:0.3s;
+        }
+        .step.completed .step-dot{
+            background:#4CAF50;
+            border-color:#4CAF50;
+            color:white;
+        }
+        .step.active .step-dot{
+            background:var(--accent);
+            border-color:var(--accent);
+            color:white;
+        }
+        .step-label{
+            font-size:12px;
+            opacity:0.7;
+        }
+        .step.active .step-label{
+            color:var(--accent);
+            font-weight:bold;
+            opacity:1;
+        }
+        
+        .options-list{
+            display:flex;
+            flex-wrap:wrap;
+            gap:8px;
+            margin-top:10px;
+        }
+        .option-badge{
+            background:var(--card);
+            padding:5px 12px;
+            border-radius:20px;
+            font-size:12px;
+        }
+        
+        footer{
+            background:var(--header);
+            padding:25px;
+            text-align:center;
+            border-top:1px solid var(--border);
+            margin-top:40px;
+        }
+        
+        @media (max-width:768px){
+            .order-content{
+                grid-template-columns:1fr;
+            }
+            .action-buttons{
+                flex-direction:column;
+            }
+        }
+    </style>
+</head>
+<body>
+<header>
+    <div class="container header-inner">
+        <div class="logo-block" onclick="window.location='index.html'">
+            <img src="images/logo.png" onerror="this.style.display='none'">
+            <h2>FurtherWind</h2>
+        </div>
+        <nav>
+            <span class="material-icons theme-toggle" onclick="window.toggleTheme()">dark_mode</span>
+            <a href="index.html">Главная</a>
+            <a href="order.html">Заказать</a>
+            <a href="login.html">Личный кабинет</a>
+        </nav>
+    </div>
+</header>
+
+<div class="container">
+    <div class="order-detail" id="orderDetail">
+        <div class="order-header">
+            <div class="order-number" id="orderNumber">Загрузка...</div>
+            <div class="order-status" id="orderStatus">Загрузка...</div>
+        </div>
+        
+        <div class="order-content">
+            <div>
+                <div class="info-section">
+                    <h3><span class="material-icons">map</span> Маршрут</h3>
+                    <div class="info-row">
+                        <span class="info-label">📍 Откуда:</span>
+                        <span class="info-value" id="fromAddress">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">📍 Куда:</span>
+                        <span class="info-value" id="toAddress">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">📏 Расстояние:</span>
+                        <span class="info-value" id="distance">-</span>
+                    </div>
+                    <div id="map"></div>
+                </div>
+                
+                <div class="info-section">
+                    <h3><span class="material-icons">timeline</span> Статус доставки</h3>
+                    <div class="tracking-steps" id="trackingSteps"></div>
+                    <div class="info-row" id="trackingInfo">
+                        <span class="info-label">📍 Текущее местоположение:</span>
+                        <span class="info-value" id="currentLocation">-</span>
+                    </div>
+                    <div class="info-row" id="estimatedDelivery">
+                        <span class="info-label">📅 Ожидаемая доставка:</span>
+                        <span class="info-value" id="estimatedDate">-</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div>
+                <div class="info-section">
+                    <h3><span class="material-icons">person</span> Отправитель</h3>
+                    <div class="info-row">
+                        <span class="info-label">Имя:</span>
+                        <span class="info-value" id="senderName">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Телефон:</span>
+                        <span class="info-value" id="senderPhone">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Email:</span>
+                        <span class="info-value" id="senderEmail">-</span>
+                    </div>
+                </div>
+                
+                <div class="info-section">
+                    <h3><span class="material-icons">person_outline</span> Получатель</h3>
+                    <div class="info-row">
+                        <span class="info-label">Имя:</span>
+                        <span class="info-value" id="receiverName">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Телефон:</span>
+                        <span class="info-value" id="receiverPhone">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Email:</span>
+                        <span class="info-value" id="receiverEmail">-</span>
+                    </div>
+                </div>
+                
+                <div class="info-section">
+                    <h3><span class="material-icons">inventory</span> Информация о грузе</h3>
+                    <div class="info-row">
+                        <span class="info-label">Тип груза:</span>
+                        <span class="info-value" id="cargoType">-</span>
+                    </div>
+                    <div class="info-row" id="packageInfo" style="display:none;">
+                        <span class="info-label">Размер/Вес:</span>
+                        <span class="info-value" id="packageSize">-</span>
+                    </div>
+                    <div class="info-row" id="truckInfo" style="display:none;">
+                        <span class="info-label">Транспорт:</span>
+                        <span class="info-value" id="truckType">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Доп. услуги:</span>
+                        <span class="info-value" id="optionsList">-</span>
+                    </div>
+                </div>
+                
+                <div class="price-block">
+                    <div>Сумма к оплате</div>
+                    <div class="amount" id="orderPrice">0 ₽</div>
+                    <div style="font-size:12px; margin-top:5px;" id="paymentDate"></div>
+                </div>
+                
+                <div class="action-buttons" id="actionButtons"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<footer>© 2026 FurtherWind</footer>
+
+<script>
+// Supabase client
+const supabaseClient = supabase.createClient(
+    'https://pnheueabzgwcyyisyaur.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBuaGV1ZWFiemd3Y3l5aXN5YXVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3MjY0MTUsImV4cCI6MjA4OTMwMjQxNX0.VtMdKZONRK1_6J2ZPqwWknDYd9_vDMcr1Jin06UNCv8'
+);
+
+let currentOrder = null;
+let map = null;
+
+// Загрузка данных заказа
+async function loadOrderData() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const orderNumber = urlParams.get('order');
+    
+    if (!orderNumber) {
+        alert('Заказ не найден');
+        window.location.href = 'login.html';
+        return;
+    }
+    
+    try {
+        const { data: order, error } = await supabaseClient
+            .from('orders')
+            .select('*')
+            .eq('order_number', orderNumber)
+            .single();
+        
+        if (error) throw error;
+        if (!order) {
+            alert('Заказ не найден');
+            window.location.href = 'login.html';
+            return;
+        }
+        
+        currentOrder = order;
+        renderOrderDetails();
+        
+    } catch (error) {
+        console.error('Ошибка загрузки заказа:', error);
+        alert('Ошибка загрузки заказа');
+        window.location.href = 'login.html';
+    }
+}
+
+// Отображение деталей заказа
+function renderOrderDetails() {
+    // Основная информация
+    document.getElementById('orderNumber').textContent = currentOrder.order_number;
+    
+    const statusMap = {
+        'pending_payment': { class: 'status-pending_payment', text: '⏳ Ожидает оплаты' },
+        'paid': { class: 'status-paid', text: '✅ Оплачен' },
+        'processing': { class: 'status-processing', text: '🔄 В обработке' },
+        'shipped': { class: 'status-shipped', text: '🚚 Отправлен' },
+        'delivered': { class: 'status-delivered', text: '📦 Доставлен' },
+        'cancelled': { class: 'status-cancelled', text: '❌ Отменен' }
+    };
+    const status = statusMap[currentOrder.status] || { class: 'status-pending_payment', text: '⏳ Ожидает оплаты' };
+    document.getElementById('orderStatus').textContent = status.text;
+    document.getElementById('orderStatus').className = `order-status ${status.class}`;
+    
+    // Адреса
+    document.getElementById('fromAddress').textContent = currentOrder.from_address;
+    document.getElementById('toAddress').textContent = currentOrder.to_address;
+    document.getElementById('distance').textContent = currentOrder.distance ? `${currentOrder.distance} км` : 'не указано';
+    
+    // Контакты
+    document.getElementById('senderName').textContent = currentOrder.sender_name || 'не указан';
+    document.getElementById('senderPhone').textContent = currentOrder.sender_phone || 'не указан';
+    document.getElementById('senderEmail').textContent = currentOrder.sender_email || 'не указан';
+    document.getElementById('receiverName').textContent = currentOrder.receiver_name || 'не указан';
+    document.getElementById('receiverPhone').textContent = currentOrder.receiver_phone || 'не указан';
+    document.getElementById('receiverEmail').textContent = currentOrder.receiver_email || 'не указан';
+    
+    // Груз
+    const cargoTypeText = {
+        'letter': 'Письмо',
+        'package': 'Посылка',
+        'move': 'Переезд',
+        'dedicated': 'Выделенный транспорт'
+    }[currentOrder.cargo_type] || currentOrder.cargo_type;
+    document.getElementById('cargoType').textContent = cargoTypeText;
+    
+    if (currentOrder.package_size) {
+        document.getElementById('packageInfo').style.display = 'flex';
+        document.getElementById('packageSize').textContent = `${currentOrder.package_size}, ${currentOrder.package_weight} кг`;
+    }
+    
+    if (currentOrder.truck_type) {
+        document.getElementById('truckInfo').style.display = 'flex';
+        document.getElementById('truckType').textContent = currentOrder.truck_type;
+    }
+    
+    // Доп. услуги
+    const options = JSON.parse(currentOrder.options || '{}');
+    const optionsNames = {
+        insurance: 'Страховка',
+        secure: 'Надёжная сделка',
+        sms: 'SMS уведомления',
+        pack: 'Упаковка',
+        documents: 'Документы'
+    };
+    const optionsList = Object.keys(options).map(k => optionsNames[k]).filter(Boolean);
+    document.getElementById('optionsList').innerHTML = optionsList.length ? optionsList.join(', ') : 'нет';
+    
+    // Цена
+    document.getElementById('orderPrice').textContent = `${currentOrder.price.toLocaleString()} ₽`;
+    document.getElementById('paymentDate').textContent = `Дата заказа: ${new Date(currentOrder.created_at).toLocaleDateString()}`;
+    
+    // Трекинг статусы
+    renderTrackingSteps();
+    
+    // Кнопки действий
+    renderActionButtons();
+    
+    // Карта
+    initMap();
+}
+
+function renderTrackingSteps() {
+    const steps = [
+        { key: 'paid', label: 'Оплачен', icon: 'paid' },
+        { key: 'processing', label: 'В обработке', icon: 'build' },
+        { key: 'shipped', label: 'Отправлен', icon: 'local_shipping' },
+        { key: 'delivered', label: 'Доставлен', icon: 'check_circle' }
+    ];
+    
+    const statusOrder = ['pending_payment', 'paid', 'processing', 'shipped', 'delivered'];
+    const currentIndex = statusOrder.indexOf(currentOrder.status);
+    
+    const stepsHtml = steps.map((step, index) => {
+        const stepIndex = statusOrder.indexOf(step.key);
+        let stepClass = '';
+        if (stepIndex < currentIndex) stepClass = 'completed';
+        else if (stepIndex === currentIndex) stepClass = 'active';
+        
+        return `
+            <div class="step ${stepClass}">
+                <div class="step-dot">
+                    <span class="material-icons" style="font-size:20px;">${step.icon}</span>
+                </div>
+                <div class="step-label">${step.label}</div>
+            </div>
+        `;
+    }).join('');
+    
+    document.getElementById('trackingSteps').innerHTML = stepsHtml;
+    
+    // Дополнительная информация о доставке
+    const estimatedDate = new Date(currentOrder.created_at);
+    if (currentOrder.status === 'pending_payment') {
+        estimatedDate.setDate(estimatedDate.getDate() + 7);
+        document.getElementById('estimatedDate').textContent = `После оплаты: ${estimatedDate.toLocaleDateString()}`;
+        document.getElementById('currentLocation').textContent = 'Ожидание оплаты';
+    } else if (currentOrder.status === 'paid') {
+        estimatedDate.setDate(estimatedDate.getDate() + 3);
+        document.getElementById('estimatedDate').textContent = estimatedDate.toLocaleDateString();
+        document.getElementById('currentLocation').textContent = 'Склад отправления';
+    } else if (currentOrder.status === 'processing') {
+        estimatedDate.setDate(estimatedDate.getDate() + 2);
+        document.getElementById('estimatedDate').textContent = estimatedDate.toLocaleDateString();
+        document.getElementById('currentLocation').textContent = 'Сортировочный центр';
+    } else if (currentOrder.status === 'shipped') {
+        estimatedDate.setDate(estimatedDate.getDate() + 1);
+        document.getElementById('estimatedDate').textContent = estimatedDate.toLocaleDateString();
+        document.getElementById('currentLocation').textContent = 'В пути';
+    } else if (currentOrder.status === 'delivered') {
+        document.getElementById('estimatedDate').textContent = 'Доставлен';
+        document.getElementById('currentLocation').textContent = 'У получателя';
+    } else {
+        document.getElementById('estimatedDate').parentElement.style.display = 'none';
+        document.getElementById('currentLocation').parentElement.style.display = 'none';
+    }
+}
+
+function renderActionButtons() {
+    const container = document.getElementById('actionButtons');
+    let buttonsHtml = '';
+    
+    if (currentOrder.status === 'pending_payment') {
+        buttonsHtml += `<button class="btn btn-success" onclick="payOrder()">💳 Оплатить заказ</button>`;
+        buttonsHtml += `<button class="btn btn-danger" onclick="cancelOrder()">❌ Отменить заказ</button>`;
+    }
+    
+    if (currentOrder.status === 'paid') {
+        buttonsHtml += `<button class="btn btn-danger" onclick="cancelOrder()">❌ Отменить заказ</button>`;
+    }
+    
+    buttonsHtml += `<button class="btn btn-primary" onclick="repeatOrder()">🔄 Повторить заказ</button>`;
+    buttonsHtml += `<button class="btn btn-secondary" onclick="downloadReceipt()">📄 Скачать квитанцию</button>`;
+    buttonsHtml += `<button class="btn btn-secondary" onclick="window.location.href='login.html'">← Вернуться в кабинет</button>`;
+    
+    container.innerHTML = buttonsHtml;
+}
+
+function payOrder() {
+    localStorage.setItem('paymentAmount', currentOrder.price);
+    localStorage.setItem('orderNumber', currentOrder.order_number);
+    window.location.href = `payment.html?order_id=${currentOrder.order_number}`;
+}
+
+async function cancelOrder() {
+    if (!confirm('Отменить заказ?')) return;
+    
+    try {
+        const { error } = await supabaseClient
+            .from('orders')
+            .update({ status: 'cancelled' })
+            .eq('order_number', currentOrder.order_number);
+        
+        if (error) throw error;
+        
+        currentOrder.status = 'cancelled';
+        renderOrderDetails();
+        showNotification('Заказ отменен');
+        
+    } catch (error) {
+        showNotification('Ошибка: ' + error.message);
+    }
+}
+
+function repeatOrder() {
+    window.location.href = `order.html?repeat=${currentOrder.order_number}`;
+}
+
+function downloadReceipt() {
+    const amount = currentOrder.price;
+    const orderNumber = currentOrder.order_number;
+    const date = new Date().toLocaleString();
+    const recipientName = 'ООО "ФазерВинд"';
+    const cardNumber = '2202 2020 **** ****';
+    const bankName = 'Т-Банк';
+    
+    const receiptHTML = `
+        <!DOCTYPE html>
+        <html>
+        <head><meta charset="UTF-8"><title>Квитанция ${orderNumber}</title>
+        <style>
+            body { font-family: Arial; padding: 20px; max-width: 800px; margin: 0 auto; }
+            .header { text-align: center; border-bottom: 2px solid #00aaff; padding-bottom: 15px; margin-bottom: 20px; }
+            .section { border: 1px solid #ddd; padding: 15px; margin: 15px 0; border-radius: 8px; }
+            .row { display: flex; justify-content: space-between; margin: 8px 0; }
+            .label { font-weight: bold; }
+            .total { font-size: 24px; font-weight: bold; text-align: center; color: #00aaff; margin: 20px 0; }
+            .footer { text-align: center; font-size: 10px; margin-top: 30px; padding-top: 15px; border-top: 1px solid #ddd; }
+        </style>
+        </head>
+        <body>
+            <div class="header"><h2>FW WALLET</h2><p>КВИТАНЦИЯ ОБ ОПЛАТЕ № ${orderNumber}</p></div>
+            <div class="section"><div class="row"><div class="label">Дата операции:</div><div>${date}</div></div></div>
+            <div class="section"><div class="row"><div class="label">Получатель:</div><div>${recipientName}</div></div>
+            <div class="row"><div class="label">Номер карты:</div><div>${cardNumber}</div></div>
+            <div class="row"><div class="label">Банк получателя:</div><div>${bankName}</div></div>
+            <div class="row"><div class="label">Назначение:</div><div>Оплата заказа ${orderNumber}</div></div></div>
+            <div class="total">СУММА: ${amount.toLocaleString()} ₽</div>
+            <div class="footer">FW Wallet — платёжный сервис FurtherWind<br>Служба поддержки: +7 (800) 777-88-99</div>
+        </body>
+        </html>
+    `;
+    
+    const element = document.createElement('div');
+    element.innerHTML = receiptHTML;
+    document.body.appendChild(element);
+    
+    const script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+    script.onload = () => {
+        html2pdf().from(element).set({
+            margin: [0.5, 0.5, 0.5, 0.5],
+            filename: `kvitanciya_${orderNumber}.pdf`,
+            html2canvas: { scale: 2 },
+            jsPDF: { unit: 'in', format: 'a4' }
+        }).save().then(() => {
+            document.body.removeChild(element);
+            showNotification('Квитанция скачана');
+        });
+    };
+    document.head.appendChild(script);
+}
+
+function initMap() {
+    if (!currentOrder.from_address || !currentOrder.to_address) return;
+    
+    ymaps.ready(() => {
+        try {
+            map = new ymaps.Map("map", {
+                center: [55.75, 37.61],
+                zoom: 5,
+                controls: ['zoomControl', 'fullscreenControl']
+            });
+            
+            // Геокодируем адреса
+            ymaps.geocode(currentOrder.from_address).then(res => {
+                const fromCoords = res.geoObjects.get(0).geometry.getCoordinates();
+                const fromPlacemark = new ymaps.Placemark(fromCoords, {
+                    hintContent: 'Отправление',
+                    balloonContent: currentOrder.from_address
+                }, { preset: 'islands#greenDotIcon' });
+                map.geoObjects.add(fromPlacemark);
+                
+                ymaps.geocode(currentOrder.to_address).then(res2 => {
+                    const toCoords = res2.geoObjects.get(0).geometry.getCoordinates();
+                    const toPlacemark = new ymaps.Placemark(toCoords, {
+                        hintContent: 'Назначение',
+                        balloonContent: currentOrder.to_address
+                    }, { preset: 'islands#redDotIcon' });
+                    map.geoObjects.add(toPlacemark);
+                    
+                    // Строим маршрут
+                    ymaps.route([fromCoords, toCoords]).then(route => {
+                        map.geoObjects.add(route);
+                        map.setBounds(route.getBounds());
+                    });
+                });
+            });
+        } catch(e) {
+            console.error('Ошибка карты:', e);
+        }
+    });
+}
+
+function showNotification(message) {
+    const notif = document.createElement('div');
+    notif.style.cssText = `position:fixed;top:20px;right:20px;background:#4CAF50;color:white;padding:12px 20px;border-radius:8px;z-index:9999;animation:slideIn 0.3s;`;
+    notif.textContent = message;
+    document.body.appendChild(notif);
+    setTimeout(() => notif.remove(), 3000);
+}
+
+window.toggleTheme = function() {
+    document.body.classList.toggle("dark");
+    localStorage.setItem("theme", document.body.classList.contains("dark") ? "dark" : "light");
+    const icon = document.querySelector('.theme-toggle');
+    if(icon) icon.textContent = document.body.classList.contains("dark") ? 'light_mode' : 'dark_mode';
+};
+
+if(localStorage.getItem("theme") == "dark") {
+    document.body.classList.add("dark");
+    document.querySelector('.theme-toggle').textContent = 'light_mode';
+}
+
+// Инициализация
+document.addEventListener('DOMContentLoaded', loadOrderData);
+</script>
+</body>
+</html>
