@@ -175,6 +175,13 @@
             text-align:center;
             margin:20px 0;
         }
+        .status-panel{
+            margin-top:20px;
+            padding:15px;
+            border-radius:8px;
+            background:var(--bg);
+            text-align:center;
+        }
         footer{
             background:var(--header);
             padding:25px;
@@ -228,13 +235,7 @@
                     <p><strong>Сумма к оплате:</strong></p>
                     <div class="amount" id="orderAmount">0 ₽</div>
                     <p><strong>Дата создания:</strong> <span id="orderDate">-</span></p>
-                </div>
-                
-                <div class="bank-details" style="margin-top:20px;">
-                    <p>💳 <strong>Реквизиты для перевода</strong></p>
-                    <p>Получатель: <strong id="recipientName">Загрузка...</strong></p>
-                    <p>Номер карты: <strong id="cardNumberDisplay">Загрузка...</strong></p>
-                    <p>Банк: <strong id="bankNameDisplay">Загрузка...</strong></p>
+                    <p><strong>Статус:</strong> <span id="orderStatus" class="status-pending">Ожидает оплаты</span></p>
                 </div>
             </div>
         </div>
@@ -256,8 +257,8 @@
                 <div class="banks-grid" id="banksGrid"></div>
                 <div class="bank-details" style="margin-top:20px;">
                     <p>📱 <strong>Реквизиты для СБП</strong></p>
-                    <p>Получатель: <strong id="sbpRecipient">Загрузка...</strong></p>
-                    <p>Номер телефона: <strong id="sbpPhone">Загрузка...</strong></p>
+                    <p>Получатель: <strong>ООО "ФазерВинд"</strong></p>
+                    <p>Номер телефона: <strong>+7 913 123-45-67</strong></p>
                     <p>Назначение: <strong id="sbpPurpose">Оплата заказа FW-12345</strong></p>
                 </div>
             </div>
@@ -304,45 +305,98 @@ const banks = [
 ];
 
 window.currentOrder = {
-    number: 'FW-' + Date.now(),
+    number: null,
     amount: 0,
-    date: new Date().toLocaleDateString()
+    date: new Date().toLocaleDateString(),
+    status: 'pending_payment'
 };
 
-// Данные получателя (загружаются из Supabase)
-let recipientData = {
-    name: '',
-    cardNumber: '',
-    bankName: '',
-    phone: ''
-};
-
-// Загрузка реквизитов получателя из Supabase
-window.loadRecipientData = async function() {
+// Загрузка данных заказа из Supabase
+window.loadOrderData = async function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const orderId = urlParams.get('order_id');
+    
+    if (!orderId) {
+        // Проверяем localStorage
+        const savedAmount = localStorage.getItem('paymentAmount');
+        const savedOrderNumber = localStorage.getItem('orderNumber');
+        if (savedAmount) {
+            window.currentOrder.amount = parseInt(savedAmount);
+            window.currentOrder.number = savedOrderNumber || 'FW-' + Date.now();
+            updateUI();
+        }
+        return;
+    }
+    
     try {
-        const { data, error } = await window.supabaseClient
-            .from('payment_recipient')
+        const { data: order, error } = await window.supabaseClient
+            .from('orders')
             .select('*')
+            .eq('order_number', orderId)
             .single();
         
-        if (error && error.code !== 'PGRST116') throw error;
+        if (error) throw error;
         
-        if (data) {
-            recipientData = data;
-        } else {
-            // Если таблицы нет, используем заглушку (но лучше создать таблицу)
-            console.log('Таблица payment_recipient не найдена');
+        if (order) {
+            window.currentOrder.number = order.order_number;
+            window.currentOrder.amount = order.price;
+            window.currentOrder.status = order.status;
+            updateUI();
+            
+            // Если заказ уже оплачен, показываем сообщение
+            if (order.status === 'paid' || order.status === 'processing' || order.status === 'shipped' || order.status === 'delivered') {
+                document.getElementById('orderStatus').innerHTML = '<span style="color:#4CAF50;">✅ Уже оплачен</span>';
+                document.querySelectorAll('.btn').forEach(btn => btn.disabled = true);
+                document.querySelectorAll('.method-btn').forEach(btn => btn.style.pointerEvents = 'none');
+                showNotification('Этот заказ уже оплачен');
+            }
         }
+    } catch (error) {
+        console.error('Ошибка загрузки заказа:', error);
+        // Пробуем из localStorage
+        const savedAmount = localStorage.getItem('paymentAmount');
+        const savedOrderNumber = localStorage.getItem('orderNumber');
+        if (savedAmount) {
+            window.currentOrder.amount = parseInt(savedAmount);
+            window.currentOrder.number = savedOrderNumber || 'FW-' + Date.now();
+            updateUI();
+        }
+    }
+};
+
+function updateUI() {
+    document.getElementById('orderAmount').textContent = `${window.currentOrder.amount.toLocaleString()} ₽`;
+    document.getElementById('orderNumber').textContent = window.currentOrder.number;
+    document.getElementById('orderDate').textContent = new Date().toLocaleDateString();
+    document.getElementById('sbpPurpose').textContent = `Оплата заказа ${window.currentOrder.number}`;
+    
+    const statusText = {
+        'pending_payment': '⏳ Ожидает оплаты',
+        'paid': '✅ Оплачен',
+        'processing': '🔄 В обработке',
+        'shipped': '🚚 Отправлен',
+        'delivered': '📦 Доставлен',
+        'cancelled': '❌ Отменен'
+    }[window.currentOrder.status] || '⏳ Ожидает оплаты';
+    
+    document.getElementById('orderStatus').innerHTML = statusText;
+}
+
+// Обновление статуса заказа после оплаты
+window.updateOrderStatus = async function(orderNumber, newStatus) {
+    try {
+        const { error } = await window.supabaseClient
+            .from('orders')
+            .update({ status: newStatus })
+            .eq('order_number', orderNumber);
         
-        // Обновляем UI
-        document.getElementById('recipientName').textContent = recipientData.name || 'ООО "ФазерВинд"';
-        document.getElementById('cardNumberDisplay').textContent = recipientData.card_number || '2202 2020 **** ****';
-        document.getElementById('bankNameDisplay').textContent = recipientData.bank_name || 'Т-Банк';
-        document.getElementById('sbpRecipient').textContent = recipientData.name || 'ООО "ФазерВинд"';
-        document.getElementById('sbpPhone').textContent = recipientData.phone || '+7 913 123-45-67';
+        if (error) throw error;
+        
+        window.currentOrder.status = newStatus;
+        updateUI();
         
     } catch (error) {
-        console.error('Ошибка загрузки реквизитов:', error);
+        console.error('Ошибка обновления статуса:', error);
     }
 };
 
@@ -379,7 +433,7 @@ window.formatExpiry = function(input) {
 };
 
 // Оплата картой
-window.processCardPayment = function() {
+window.processCardPayment = async function() {
     const cardNumber = document.getElementById('cardNumber').value.replace(/\s/g, '');
     const cardExpiry = document.getElementById('cardExpiry').value;
     const cardCvv = document.getElementById('cardCvv').value;
@@ -390,30 +444,35 @@ window.processCardPayment = function() {
     if (!cardCvv || cardCvv.length < 3) { alert('Введите CVV код'); return; }
     if (!cardHolder) { alert('Введите имя держателя карты'); return; }
     
-    alert(`✅ Оплата картой на сумму ${window.currentOrder.amount.toLocaleString()} ₽ выполнена!\nНомер заказа: ${window.currentOrder.number}`);
+    // Показываем процесс оплаты
+    const btn = event.target;
+    btn.disabled = true;
+    btn.textContent = 'Обработка...';
     
-    window.saveTransaction('card', window.currentOrder.amount, window.currentOrder.number, cardHolder);
-    
-    window.location.href = 'order.html';
-};
-
-// Загрузка данных заказа
-window.loadOrderData = function() {
-    const savedAmount = localStorage.getItem('paymentAmount');
-    const savedOrderNumber = localStorage.getItem('orderNumber');
-    if (savedAmount) {
-        window.currentOrder.amount = parseInt(savedAmount);
-        window.currentOrder.number = savedOrderNumber || window.currentOrder.number;
-    }
-    document.getElementById('orderAmount').textContent = `${window.currentOrder.amount.toLocaleString()} ₽`;
-    document.getElementById('orderNumber').textContent = window.currentOrder.number;
-    document.getElementById('orderDate').textContent = new Date().toLocaleDateString();
-    document.getElementById('sbpPurpose').textContent = `Оплата заказа ${window.currentOrder.number}`;
+    // Имитация обработки платежа
+    setTimeout(async () => {
+        alert(`✅ Оплата картой на сумму ${window.currentOrder.amount.toLocaleString()} ₽ выполнена!\nНомер заказа: ${window.currentOrder.number}`);
+        
+        // Сохраняем транзакцию
+        await window.saveTransaction('card', window.currentOrder.amount, window.currentOrder.number, cardHolder);
+        
+        // Обновляем статус заказа
+        await window.updateOrderStatus(window.currentOrder.number, 'paid');
+        
+        btn.disabled = false;
+        btn.textContent = '💳 Оплатить';
+        
+        // Перенаправляем в личный кабинет через 2 секунды
+        setTimeout(() => {
+            window.location.href = 'login.html';
+        }, 2000);
+        
+    }, 1500);
 };
 
 // Генерация QR-кода для СБП
 window.generateQR = function() {
-    const phone = recipientData.phone || '79131234567';
+    const phone = '79131234567';
     const amount = window.currentOrder.amount;
     const purpose = encodeURIComponent(`Оплата заказа ${window.currentOrder.number}`);
     const qrData = `https://qr.nspk.ru/?type=01&bank=100000000009&sum=${(amount / 100).toFixed(2)}&curr=RUB&recipient=${phone}&purpose=${purpose}`;
@@ -429,7 +488,7 @@ window.generateQR = function() {
 // Открытие банка для оплаты
 window.openBank = function(bank) {
     const purpose = encodeURIComponent(`Оплата заказа ${window.currentOrder.number}`);
-    const phone = recipientData.phone || '79131234567';
+    const phone = '79131234567';
     let url = `https://www.google.com/search?q=${encodeURIComponent(bank.name + ' СБП оплата')}`;
     
     if (bank.name === 'Сбербанк') {
@@ -438,11 +497,31 @@ window.openBank = function(bank) {
         url = `https://www.tbank.ru/sbp/?phone=${phone}&amount=${window.currentOrder.amount}&comment=${purpose}`;
     }
     window.open(url, '_blank');
-    alert(`Переход в ${bank.name} для оплаты заказа ${window.currentOrder.number}`);
+    alert(`Переход в ${bank.name} для оплаты заказа ${window.currentOrder.number}\n\nПосле оплаты нажмите "Оплачено" для подтверждения.`);
+    
+    // Показываем кнопку подтверждения после оплаты
+    setTimeout(() => {
+        if (confirm(`Оплатили заказ ${window.currentOrder.number}?`)) {
+            window.confirmPayment('sbp', bank.name);
+        }
+    }, 5000);
+};
+
+// Подтверждение оплаты (для СБП)
+window.confirmPayment = async function(method, bankName) {
+    const btn = document.querySelector('#sbpMethod .btn');
+    if (btn) btn.disabled = true;
+    
+    await window.saveTransaction(method, window.currentOrder.amount, window.currentOrder.number, bankName);
+    await window.updateOrderStatus(window.currentOrder.number, 'paid');
+    
+    alert(`✅ Оплата подтверждена!\nНомер заказа: ${window.currentOrder.number}`);
+    
+    if (btn) btn.disabled = false;
     
     setTimeout(() => {
-        window.saveTransaction('sbp', window.currentOrder.amount, window.currentOrder.number, bank.name);
-    }, 5000);
+        window.location.href = 'login.html';
+    }, 2000);
 };
 
 // Сохранение транзакции
@@ -469,10 +548,10 @@ window.downloadReceipt = function() {
     const amount = window.currentOrder.amount;
     const orderNumber = window.currentOrder.number;
     const date = new Date().toLocaleString();
-    const phone = recipientData.phone || '79131234567';
-    const cardNumber = recipientData.card_number || '2202 2020 **** ****';
-    const recipientName = recipientData.name || 'ООО "ФазерВинд"';
-    const bankName = recipientData.bank_name || 'Т-Банк';
+    const phone = '79131234567';
+    const cardNumber = '2202 2020 **** ****';
+    const recipientName = 'ООО "ФазерВинд"';
+    const bankName = 'Т-Банк';
     const qrData = `https://qr.nspk.ru/?type=01&bank=100000000009&sum=${(amount / 100).toFixed(2)}&curr=RUB&recipient=${phone}&purpose=Оплата%20заказа%20${orderNumber}`;
     
     const receiptHTML = `
@@ -546,7 +625,6 @@ window.showNotification = function(message) {
 // Инициализация
 document.addEventListener('DOMContentLoaded', function() {
     window.loadOrderData();
-    window.loadRecipientData();
     window.renderBanks();
     if(localStorage.getItem("theme") == "dark") document.body.classList.add("dark");
 });
