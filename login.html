@@ -292,9 +292,11 @@
             font-size:12px;
             font-weight:bold;
         }
-        .status-pending{ background:#ffd700; color:#000; }
+        .status-pending_payment{ background:#ffd700; color:#000; }
+        .status-paid{ background:#4CAF50; color:#fff; }
         .status-processing{ background:var(--accent); color:#fff; }
-        .status-completed{ background:#4CAF50; color:#fff; }
+        .status-shipped{ background:#2196F3; color:#fff; }
+        .status-delivered{ background:#4CAF50; color:#fff; }
         .status-cancelled{ background:#ff4444; color:#fff; }
         .order-info{
             margin:10px 0;
@@ -335,6 +337,14 @@
             background:var(--card);
             border:1px solid var(--border);
             color:var(--text);
+        }
+        .order-btn.pay{
+            background:#4CAF50;
+            color:#fff;
+        }
+        .order-btn.cancel{
+            background:#ff4444;
+            color:#fff;
         }
         /* Сохранённые адреса */
         .addresses-grid{
@@ -438,42 +448,6 @@
         .captcha-refresh{
             cursor:pointer;
             color:var(--accent);
-        }
-        /* Админ-панель */
-        .admin-panel {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: var(--card);
-            border-radius: 10px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            z-index: 9999;
-            border: 1px solid var(--accent);
-            max-width: 400px;
-            display: none;
-        }
-        .admin-header {
-            background: var(--accent);
-            color: white;
-            padding: 10px 15px;
-            border-radius: 10px 10px 0 0;
-            cursor: pointer;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .admin-content {
-            padding: 15px;
-            max-height: 400px;
-            overflow-y: auto;
-        }
-        .admin-user {
-            border-bottom: 1px solid var(--border);
-            padding: 8px;
-            font-size: 12px;
-        }
-        .admin-user strong {
-            color: var(--accent);
         }
         .notification-popup{
             position:fixed;
@@ -620,18 +594,6 @@
     </div>
 </div>
 
-<!-- Админ-панель -->
-<div id="adminPanel" class="admin-panel">
-    <div class="admin-header" onclick="toggleAdminPanel()">
-        <span>👑 Админ-панель</span>
-        <span class="material-icons">keyboard_arrow_up</span>
-    </div>
-    <div id="adminContent" class="admin-content" style="display:none;">
-        <div id="adminUsersList">Загрузка...</div>
-        <button class="auth-btn" style="margin-top:10px;" onclick="loadAdminUsers()">Обновить</button>
-    </div>
-</div>
-
 <footer>© 2026 FurtherWind</footer>
 
 <script>
@@ -645,57 +607,6 @@ const supabaseClient = supabase.createClient(
 // ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
 // ======================
 let currentUser = null;
-
-// ======================
-// АДМИН-ПАНЕЛЬ
-// ======================
-let adminVisible = false;
-
-function toggleAdminPanel() {
-    adminVisible = !adminVisible;
-    const content = document.getElementById('adminContent');
-    const headerIcon = document.querySelector('.admin-header span:last-child');
-    content.style.display = adminVisible ? 'block' : 'none';
-    headerIcon.textContent = adminVisible ? 'keyboard_arrow_down' : 'keyboard_arrow_up';
-    if (adminVisible) loadAdminUsers();
-}
-
-async function loadAdminUsers() {
-    const listDiv = document.getElementById('adminUsersList');
-    listDiv.innerHTML = 'Загрузка...';
-    
-    try {
-        const { data: { session } } = await supabaseClient.auth.getSession();
-        if (session?.user?.email !== 'andrey_2019_myashin@mail.ru') {
-            listDiv.innerHTML = 'Доступ только для администратора';
-            return;
-        }
-        
-        const { data: profiles, error } = await supabaseClient
-            .from('profiles')
-            .select('id, full_name, phone, created_at')
-            .order('created_at', { ascending: false });
-        
-        if (error) throw error;
-        
-        if (!profiles || profiles.length === 0) {
-            listDiv.innerHTML = 'Нет пользователей';
-            return;
-        }
-        
-        listDiv.innerHTML = profiles.map(p => `
-            <div class="admin-user">
-                <strong>${p.full_name || 'Без имени'}</strong><br>
-                📞 ${p.phone || 'нет'}<br>
-                📅 ${new Date(p.created_at).toLocaleDateString()}
-            </div>
-        `).join('');
-        
-    } catch (e) {
-        console.error('Ошибка загрузки:', e);
-        listDiv.innerHTML = 'Ошибка загрузки';
-    }
-}
 
 // ======================
 // ТЕМА
@@ -809,7 +720,6 @@ async function checkAuth() {
             document.getElementById('profileEmail').value = session.user.email || '';
             document.getElementById('profilePhone').value = profile?.phone || '';
             
-            // Загружаем заказы и адреса
             loadOrders();
             loadAddresses();
         } else {
@@ -849,37 +759,48 @@ async function loadOrders() {
         grid.innerHTML = '';
         
         orders.forEach(order => {
-            const statusClass = {
-                'pending': 'status-pending',
-                'processing': 'status-processing',
-                'completed': 'status-completed',
-                'cancelled': 'status-cancelled'
-            }[order.status] || 'status-pending';
+            const statusMap = {
+                'pending_payment': { class: 'status-pending_payment', text: 'Ожидает оплаты' },
+                'paid': { class: 'status-paid', text: 'Оплачен' },
+                'processing': { class: 'status-processing', text: 'В обработке' },
+                'shipped': { class: 'status-shipped', text: 'Отправлен' },
+                'delivered': { class: 'status-delivered', text: 'Доставлен' },
+                'cancelled': { class: 'status-cancelled', text: 'Отменен' }
+            };
+            const status = statusMap[order.status] || { class: 'status-pending_payment', text: 'Ожидает оплаты' };
             
-            const statusText = {
-                'pending': 'Ожидает оплаты',
-                'processing': 'В обработке',
-                'completed': 'Доставлен',
-                'cancelled': 'Отменен'
-            }[order.status] || 'Новый';
+            const cargoTypeText = {
+                'letter': 'Письмо',
+                'package': 'Посылка',
+                'move': 'Переезд',
+                'dedicated': 'Выделенный транспорт'
+            }[order.cargo_type] || order.cargo_type;
+            
+            const canPay = order.status === 'pending_payment';
+            const canCancel = order.status === 'pending_payment' || order.status === 'paid';
             
             const card = document.createElement('div');
             card.className = 'order-card';
+            card.onclick = (e) => {
+                if(e.target.tagName !== 'BUTTON') showOrderDetails(order);
+            };
             card.innerHTML = `
                 <div class="order-header">
                     <span class="order-number">${order.order_number}</span>
-                    <span class="order-status ${statusClass}">${statusText}</span>
+                    <span class="order-status ${status.class}">${status.text}</span>
                 </div>
                 <div class="order-info">
                     <p><span class="material-icons">date_range</span> ${new Date(order.created_at).toLocaleDateString()}</p>
                     <p><span class="material-icons">location_on</span> ${order.from_address}</p>
                     <p><span class="material-icons">location_on</span> ${order.to_address}</p>
-                    <p><span class="material-icons">inventory</span> ${order.cargo_type === 'letter' ? 'Письмо' : order.cargo_type === 'package' ? 'Посылка' : order.cargo_type === 'move' ? 'Переезд' : 'Выделенный транспорт'}</p>
+                    <p><span class="material-icons">inventory</span> ${cargoTypeText}</p>
                 </div>
                 <div class="order-price">${order.price.toLocaleString()} ₽</div>
                 <div class="order-actions">
-                    <button class="order-btn track" onclick="window.trackOrder('${order.order_number}')">Отследить</button>
-                    <button class="order-btn repeat" onclick="window.repeatOrder('${order.order_number}')">Повторить</button>
+                    ${canPay ? `<button class="order-btn pay" onclick="event.stopPropagation(); window.payOrder('${order.order_number}')">💳 Оплатить</button>` : ''}
+                    ${canCancel ? `<button class="order-btn cancel" onclick="event.stopPropagation(); window.cancelOrder('${order.order_number}')">❌ Отменить</button>` : ''}
+                    <button class="order-btn track" onclick="event.stopPropagation(); window.trackOrder('${order.order_number}')">📍 Отследить</button>
+                    <button class="order-btn repeat" onclick="event.stopPropagation(); window.repeatOrder('${order.order_number}')">🔄 Повторить</button>
                 </div>
             `;
             grid.appendChild(card);
@@ -890,6 +811,70 @@ async function loadOrders() {
         grid.innerHTML = '<div style="text-align:center; padding:40px;">Ошибка загрузки заказов</div>';
     }
 }
+
+// Показать детали заказа
+function showOrderDetails(order) {
+    const cargoTypeText = {
+        'letter': 'Письмо',
+        'package': 'Посылка',
+        'move': 'Переезд',
+        'dedicated': 'Выделенный транспорт'
+    }[order.cargo_type] || order.cargo_type;
+    
+    let details = `
+        📦 Заказ: ${order.order_number}
+        📅 Дата: ${new Date(order.created_at).toLocaleString()}
+        📍 Откуда: ${order.from_address}
+        📍 Куда: ${order.to_address}
+        📏 Расстояние: ${order.distance || '?'} км
+        🚚 Тип: ${cargoTypeText}
+        💰 Сумма: ${order.price.toLocaleString()} ₽
+        👤 Отправитель: ${order.sender_name || 'не указан'}
+        📞 Телефон отправителя: ${order.sender_phone || 'не указан'}
+        👤 Получатель: ${order.receiver_name || 'не указан'}
+        📞 Телефон получателя: ${order.receiver_phone || 'не указан'}
+    `;
+    
+    if (order.package_size) details += `\n📦 Размер коробки: ${order.package_size}`;
+    if (order.truck_type) details += `\n🚛 Транспорт: ${order.truck_type}`;
+    if (order.options) {
+        const opts = JSON.parse(order.options || '{}');
+        const optsList = Object.keys(opts).map(k => {
+            const names = { insurance: 'Страховка', secure: 'Надёжная сделка', sms: 'SMS уведомления', pack: 'Упаковка', documents: 'Документы' };
+            return names[k];
+        }).filter(Boolean);
+        if (optsList.length) details += `\n✨ Доп. услуги: ${optsList.join(', ')}`;
+    }
+    
+    alert(details);
+}
+
+// Оплата заказа
+window.payOrder = function(orderNumber) {
+    const orderPrice = localStorage.getItem('paymentAmount');
+    localStorage.setItem('paymentAmount', orderPrice);
+    localStorage.setItem('orderNumber', orderNumber);
+    window.location.href = `payment.html?order_id=${orderNumber}`;
+};
+
+// Отмена заказа
+window.cancelOrder = async function(orderNumber) {
+    if (!confirm(`Отменить заказ ${orderNumber}?`)) return;
+    
+    try {
+        const { error } = await supabaseClient
+            .from('orders')
+            .update({ status: 'cancelled' })
+            .eq('order_number', orderNumber)
+            .eq('user_id', currentUser.id);
+        
+        if (error) throw error;
+        showNotification('Заказ отменен');
+        loadOrders();
+    } catch (error) {
+        showNotification('Ошибка: ' + error.message);
+    }
+};
 
 // ======================
 // ЗАГРУЗКА СОХРАНЁННЫХ АДРЕСОВ
@@ -1037,7 +1022,7 @@ window.deleteAddress = async function(id) {
 // ДЕЙСТВИЯ С ЗАКАЗАМИ
 // ======================
 window.trackOrder = function(orderNumber) {
-    alert(`Отслеживание заказа ${orderNumber}\n\nСтатус: ${orderNumber.includes('LE') || orderNumber.includes('PC') ? 'Можно отследить' : 'Для данного типа заказа трекинг недоступен'}`);
+    alert(`Отслеживание заказа ${orderNumber}\n\nДля посылок и писем доступен трекинг по номеру.\nДругие типы заказов отслеживаются по звонку оператора.`);
 };
 
 window.repeatOrder = function(orderNumber) {
@@ -1308,13 +1293,6 @@ document.addEventListener('DOMContentLoaded', function() {
     if(phoneInput) phoneInput.addEventListener('input', () => formatPhone(phoneInput));
     
     checkAuth();
-    
-    setTimeout(async () => {
-        const { data: { session } } = await supabaseClient.auth.getSession();
-        if (session?.user?.email === 'andrey_2019_myashin@mail.ru') {
-            document.getElementById('adminPanel').style.display = 'block';
-        }
-    }, 1000);
 });
 </script>
 </body>
