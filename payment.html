@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>FW Wallet — Оплата заказа</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs2@0.0.2/qrcode.min.js"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        :root{ --bg:#fff; --text:#111; --card:#f3f3f3; --accent:#00aaff; --border:#ddd; }
+        .dark{ --bg:#1f1f1f; --text:#fff; --card:#2a2a2a; --accent:#00aaff; --border:#444; }
+        * { box-sizing: border-box; }
+        body{
+            margin:0;
+            font-family:Arial;
+            background:var(--bg);
+            color:var(--text);
+            transition:0.3s;
+            min-height:100vh;
+            display:flex;
+            flex-direction:column;
+        }
+        .container{
+            width:1200px;
+            max-width:95%;
+            margin:auto;
+            padding:20px 0;
+        }
+        .payment-methods{
+            display:flex;
+            gap:15px;
+            margin-bottom:30px;
+        }
+        .method-btn{
+            flex:1;
+            padding:15px;
+            background:var(--card);
+            border:2px solid var(--border);
+            border-radius:12px;
+            text-align:center;
+            cursor:pointer;
+            font-weight:bold;
+            transition:0.3s;
+        }
+        .method-btn.active{
+            border-color:var(--accent);
+            background:var(--accent);
+            color:#fff;
+        }
+        .payment-content{
+            display:none;
+        }
+        .payment-content.active{
+            display:block;
+        }
+        .payment-grid{
+            display:grid;
+            grid-template-columns:1fr 1fr;
+            gap:30px;
+        }
+        .payment-card{
+            background:var(--card);
+            border-radius:20px;
+            padding:25px;
+        }
+        .payment-card h2{
+            margin-top:0;
+            color:var(--accent);
+            font-size:20px;
+            display:flex;
+            align-items:center;
+            gap:10px;
+        }
+        .bank-details{
+            background:var(--bg);
+            border-radius:12px;
+            padding:20px;
+            margin:20px 0;
+            text-align:center;
+            border:1px solid var(--accent);
+        }
+        .bank-details p{
+            margin:8px 0;
+            font-size:14px;
+        }
+        .amount{
+            font-size:36px;
+            font-weight:bold;
+            color:var(--accent);
+            text-align:center;
+            margin:20px 0;
+        }
+        .order-info{
+            background:var(--bg);
+            border-radius:12px;
+            padding:15px;
+            margin-bottom:20px;
+        }
+        .order-info p{
+            margin:8px 0;
+        }
+        .banks-grid{
+            display:grid;
+            grid-template-columns:repeat(auto-fill, minmax(100px, 1fr));
+            gap:15px;
+            margin:20px 0;
+            max-height:400px;
+            overflow-y:auto;
+            padding:5px;
+        }
+        .bank-card{
+            background:var(--bg);
+            border-radius:10px;
+            padding:12px;
+            text-align:center;
+            cursor:pointer;
+            transition:0.3s;
+            border:2px solid transparent;
+        }
+        .bank-card:hover{
+            transform:translateY(-3px);
+            border-color:var(--accent);
+        }
+        .bank-logo{
+            width:50px;
+            height:50px;
+            object-fit:contain;
+            margin:0 auto 8px;
+        }
+        .bank-name{
+            font-size:11px;
+            font-weight:bold;
+        }
+        .qr-container{
+            text-align:center;
+            margin:20px 0;
+        }
+        #qrCode{
+            display:inline-block;
+            background:white;
+            padding:15px;
+            border-radius:12px;
+        }
+        .card-input{
+            width:100%;
+            padding:12px;
+            margin:10px 0;
+            border-radius:8px;
+            border:1px solid var(--border);
+            background:var(--bg);
+            color:var(--text);
+            font-size:16px;
+        }
+        .btn{
+            width:100%;
+            padding:14px;
+            background:var(--accent);
+            color:#fff;
+            border:none;
+            border-radius:10px;
+            font-size:16px;
+            font-weight:bold;
+            cursor:pointer;
+            margin:10px 0;
+        }
+        .btn-secondary{
+            background:#666;
+        }
+        .success-message{
+            background:#4CAF50;
+            color:white;
+            padding:15px;
+            border-radius:10px;
+            text-align:center;
+            margin:20px 0;
+        }
+        footer{
+            background:var(--header);
+            padding:25px;
+            text-align:center;
+            border-top:1px solid var(--border);
+            margin-top:40px;
+        }
+        @media (max-width:768px){
+            .payment-grid{
+                grid-template-columns:1fr;
+            }
+            .payment-methods{
+                flex-direction:column;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div style="text-align:center; margin-bottom:20px;">
+        <img src="images/logoFWWallet.svg" onerror="this.style.display='none'" style="height:60px;">
+        <h1>FW Wallet</h1>
+        <p style="opacity:0.7;">Оплата заказа</p>
+    </div>
+    
+    <div class="payment-methods">
+        <div class="method-btn active" onclick="window.switchMethod('card')">💳 Банковская карта</div>
+        <div class="method-btn" onclick="window.switchMethod('sbp')">📱 Система быстрых платежей (СБП)</div>
+    </div>
+    
+    <!-- Оплата картой -->
+    <div id="cardMethod" class="payment-content active">
+        <div class="payment-grid">
+            <div class="payment-card">
+                <h2><span class="material-icons">credit_card</span> Данные карты</h2>
+                <input type="text" id="cardNumber" class="card-input" placeholder="Номер карты" maxlength="19" oninput="window.formatCardNumber(this)">
+                <div style="display:flex; gap:15px;">
+                    <input type="text" id="cardExpiry" class="card-input" placeholder="ММ/ГГ" maxlength="5" oninput="window.formatExpiry(this)" style="flex:1;">
+                    <input type="password" id="cardCvv" class="card-input" placeholder="CVV" maxlength="3" style="flex:1;">
+                </div>
+                <input type="text" id="cardHolder" class="card-input" placeholder="Имя держателя">
+                <button class="btn" onclick="window.processCardPayment()">💳 Оплатить</button>
+                <button class="btn btn-secondary" onclick="window.downloadReceipt()">📄 Скачать квитанцию (PDF)</button>
+            </div>
+            
+            <div class="payment-card">
+                <h2><span class="material-icons">receipt</span> Информация о заказе</h2>
+                <div class="order-info">
+                    <p><strong>Номер заказа:</strong> <span id="orderNumber">FW-20240323-001</span></p>
+                    <p><strong>Сумма к оплате:</strong></p>
+                    <div class="amount" id="orderAmount">0 ₽</div>
+                    <p><strong>Дата создания:</strong> <span id="orderDate">-</span></p>
+                </div>
+                
+                <div class="bank-details" style="margin-top:20px;">
+                    <p>💳 <strong>Реквизиты для перевода</strong></p>
+                    <p>Получатель: <strong id="recipientName">Загрузка...</strong></p>
+                    <p>Номер карты: <strong id="cardNumberDisplay">Загрузка...</strong></p>
+                    <p>Банк: <strong id="bankNameDisplay">Загрузка...</strong></p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Оплата через СБП -->
+    <div id="sbpMethod" class="payment-content">
+        <div class="payment-grid">
+            <div class="payment-card">
+                <h2><span class="material-icons">qr_code_scanner</span> Оплата по QR-коду</h2>
+                <div class="qr-container">
+                    <div id="qrCode"></div>
+                    <p style="font-size:12px; margin-top:10px;">Отсканируйте QR-код в приложении вашего банка</p>
+                </div>
+                <button class="btn btn-secondary" onclick="window.downloadReceipt()">📄 Скачать квитанцию (PDF)</button>
+            </div>
+            <div class="payment-card">
+                <h2><span class="material-icons">account_balance</span> Выберите ваш банк</h2>
+                <div class="banks-grid" id="banksGrid"></div>
+                <div class="bank-details" style="margin-top:20px;">
+                    <p>📱 <strong>Реквизиты для СБП</strong></p>
+                    <p>Получатель: <strong id="sbpRecipient">Загрузка...</strong></p>
+                    <p>Номер телефона: <strong id="sbpPhone">Загрузка...</strong></p>
+                    <p>Назначение: <strong id="sbpPurpose">Оплата заказа FW-12345</strong></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<footer>
+    <p>FW Wallet — платёжный сервис FurtherWind</p>
+    <p>© 2026 FW Wallet. Все права защищены.</p>
+    <p>Служба поддержки: +7 (800) 777-88-99 | support@fwwallet.ru</p>
+</footer>
+
+<script>
+// Supabase client
+window.supabaseClient = supabase.createClient(
+    'https://pnheueabzgwcyyisyaur.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBuaGV1ZWFiemd3Y3l5aXN5YXVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3MjY0MTUsImV4cCI6MjA4OTMwMjQxNX0.VtMdKZONRK1_6J2ZPqwWknDYd9_vDMcr1Jin06UNCv8'
+);
+
+// Банки для СБП (с локальными логотипами)
+const banks = [
+    { name: 'Сбербанк', logo: 'images/BankLogo/sberbank.png' },
+    { name: 'Т-Банк', logo: 'images/BankLogo/tbank.png' },
+    { name: 'Альфа-Банк', logo: 'images/BankLogo/alfabank.png' },
+    { name: 'ВТБ', logo: 'images/BankLogo/vtb.png' },
+    { name: 'Газпромбанк', logo: 'images/BankLogo/gazprombank.png' },
+    { name: 'Открытие', logo: 'images/BankLogo/open.png' },
+    { name: 'Совкомбанк', logo: 'images/BankLogo/sovcombank.png' },
+    { name: 'Уралсиб', logo: 'images/BankLogo/uralsib.png' },
+    { name: 'Почта Банк', logo: 'images/BankLogo/pochta.png' },
+    { name: 'Россельхозбанк', logo: 'images/BankLogo/rshb.png' },
+    { name: 'Райффайзенбанк', logo: 'images/BankLogo/raiffeisen.png' },
+    { name: 'Ак Барс', logo: 'images/BankLogo/akbars.png' },
+    { name: 'МКБ', logo: 'images/BankLogo/mkb.png' },
+    { name: 'Модульбанк', logo: 'images/BankLogo/modulbank.png' },
+    { name: 'Точка', logo: 'images/BankLogo/tochka.png' },
+    { name: 'Хоум Кредит', logo: 'images/BankLogo/homecredit.png' },
+    { name: 'Ренессанс', logo: 'images/BankLogo/rencredit.png' },
+    { name: 'ОТП Банк', logo: 'images/BankLogo/otpbank.png' },
+    { name: 'Зенит', logo: 'images/BankLogo/zenit.png' },
+    { name: 'Авангард', logo: 'images/BankLogo/avangard.png' },
+    { name: 'БКС', logo: 'images/BankLogo/bcs-bank.png' }
+];
+
+window.currentOrder = {
+    number: 'FW-' + Date.now(),
+    amount: 0,
+    date: new Date().toLocaleDateString()
+};
+
+// Данные получателя (загружаются из Supabase)
+let recipientData = {
+    name: '',
+    cardNumber: '',
+    bankName: '',
+    phone: ''
+};
+
+// Загрузка реквизитов получателя из Supabase
+window.loadRecipientData = async function() {
+    try {
+        const { data, error } = await window.supabaseClient
+            .from('payment_recipient')
+            .select('*')
+            .single();
+        
+        if (error && error.code !== 'PGRST116') throw error;
+        
+        if (data) {
+            recipientData = data;
+        } else {
+            // Если таблицы нет, используем заглушку (но лучше создать таблицу)
+            console.log('Таблица payment_recipient не найдена');
+        }
+        
+        // Обновляем UI
+        document.getElementById('recipientName').textContent = recipientData.name || 'ООО "ФазерВинд"';
+        document.getElementById('cardNumberDisplay').textContent = recipientData.card_number || '2202 2020 **** ****';
+        document.getElementById('bankNameDisplay').textContent = recipientData.bank_name || 'Т-Банк';
+        document.getElementById('sbpRecipient').textContent = recipientData.name || 'ООО "ФазерВинд"';
+        document.getElementById('sbpPhone').textContent = recipientData.phone || '+7 913 123-45-67';
+        
+    } catch (error) {
+        console.error('Ошибка загрузки реквизитов:', error);
+    }
+};
+
+// Переключение между картой и СБП
+window.switchMethod = function(method) {
+    document.querySelectorAll('.method-btn').forEach(btn => btn.classList.remove('active'));
+    if(method === 'card') {
+        document.querySelectorAll('.method-btn')[0].classList.add('active');
+        document.getElementById('cardMethod').classList.add('active');
+        document.getElementById('sbpMethod').classList.remove('active');
+    } else {
+        document.querySelectorAll('.method-btn')[1].classList.add('active');
+        document.getElementById('sbpMethod').classList.add('active');
+        document.getElementById('cardMethod').classList.remove('active');
+        window.generateQR();
+    }
+};
+
+// Форматирование карты
+window.formatCardNumber = function(input) {
+    let value = input.value.replace(/\D/g, '');
+    if (value.length > 16) value = value.slice(0, 16);
+    input.value = value.replace(/(\d{4})(?=\d)/g, '$1 ').trim();
+};
+
+window.formatExpiry = function(input) {
+    let value = input.value.replace(/\D/g, '');
+    if (value.length > 4) value = value.slice(0, 4);
+    if (value.length >= 3) {
+        input.value = value.slice(0, 2) + '/' + value.slice(2);
+    } else {
+        input.value = value;
+    }
+};
+
+// Оплата картой
+window.processCardPayment = function() {
+    const cardNumber = document.getElementById('cardNumber').value.replace(/\s/g, '');
+    const cardExpiry = document.getElementById('cardExpiry').value;
+    const cardCvv = document.getElementById('cardCvv').value;
+    const cardHolder = document.getElementById('cardHolder').value;
+    
+    if (!cardNumber || cardNumber.length < 16) { alert('Введите корректный номер карты'); return; }
+    if (!cardExpiry || cardExpiry.length !== 5) { alert('Введите срок действия карты (ММ/ГГ)'); return; }
+    if (!cardCvv || cardCvv.length < 3) { alert('Введите CVV код'); return; }
+    if (!cardHolder) { alert('Введите имя держателя карты'); return; }
+    
+    alert(`✅ Оплата картой на сумму ${window.currentOrder.amount.toLocaleString()} ₽ выполнена!\nНомер заказа: ${window.currentOrder.number}`);
+    
+    window.saveTransaction('card', window.currentOrder.amount, window.currentOrder.number, cardHolder);
+    
+    window.location.href = 'order.html';
+};
+
+// Загрузка данных заказа
+window.loadOrderData = function() {
+    const savedAmount = localStorage.getItem('paymentAmount');
+    const savedOrderNumber = localStorage.getItem('orderNumber');
+    if (savedAmount) {
+        window.currentOrder.amount = parseInt(savedAmount);
+        window.currentOrder.number = savedOrderNumber || window.currentOrder.number;
+    }
+    document.getElementById('orderAmount').textContent = `${window.currentOrder.amount.toLocaleString()} ₽`;
+    document.getElementById('orderNumber').textContent = window.currentOrder.number;
+    document.getElementById('orderDate').textContent = new Date().toLocaleDateString();
+    document.getElementById('sbpPurpose').textContent = `Оплата заказа ${window.currentOrder.number}`;
+};
+
+// Генерация QR-кода для СБП
+window.generateQR = function() {
+    const phone = recipientData.phone || '79131234567';
+    const amount = window.currentOrder.amount;
+    const purpose = encodeURIComponent(`Оплата заказа ${window.currentOrder.number}`);
+    const qrData = `https://qr.nspk.ru/?type=01&bank=100000000009&sum=${(amount / 100).toFixed(2)}&curr=RUB&recipient=${phone}&purpose=${purpose}`;
+    const qrDiv = document.getElementById('qrCode');
+    qrDiv.innerHTML = '';
+    try {
+        new QRCode(qrDiv, { text: qrData, width: 200, height: 200, colorDark: '#000000', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.H });
+    } catch(e) {
+        qrDiv.innerHTML = `<div style="width:200px; height:200px; background:#f0f0f0; display:flex; align-items:center; justify-content:center; border-radius:10px;">📱 QR-код</div>`;
+    }
+};
+
+// Открытие банка для оплаты
+window.openBank = function(bank) {
+    const purpose = encodeURIComponent(`Оплата заказа ${window.currentOrder.number}`);
+    const phone = recipientData.phone || '79131234567';
+    let url = `https://www.google.com/search?q=${encodeURIComponent(bank.name + ' СБП оплата')}`;
+    
+    if (bank.name === 'Сбербанк') {
+        url = `https://www.sberbank.ru/ru/person/payments/sbp?recipient=${phone}&purpose=${purpose}&amount=${window.currentOrder.amount}`;
+    } else if (bank.name === 'Т-Банк') {
+        url = `https://www.tbank.ru/sbp/?phone=${phone}&amount=${window.currentOrder.amount}&comment=${purpose}`;
+    }
+    window.open(url, '_blank');
+    alert(`Переход в ${bank.name} для оплаты заказа ${window.currentOrder.number}`);
+    
+    setTimeout(() => {
+        window.saveTransaction('sbp', window.currentOrder.amount, window.currentOrder.number, bank.name);
+    }, 5000);
+};
+
+// Сохранение транзакции
+window.saveTransaction = async function(method, amount, orderNumber, payerName) {
+    const { data: { session } } = await window.supabaseClient.auth.getSession();
+    try {
+        await window.supabaseClient.from('payments').insert({
+            order_number: orderNumber,
+            amount: amount,
+            payer_name: payerName,
+            payment_method: method,
+            transaction_id: 'FW-' + Date.now(),
+            status: 'completed',
+            user_id: session?.user?.id || null
+        });
+        console.log('Транзакция сохранена');
+    } catch (error) {
+        console.error('Ошибка сохранения:', error);
+    }
+};
+
+// Скачать квитанцию PDF
+window.downloadReceipt = function() {
+    const amount = window.currentOrder.amount;
+    const orderNumber = window.currentOrder.number;
+    const date = new Date().toLocaleString();
+    const phone = recipientData.phone || '79131234567';
+    const cardNumber = recipientData.card_number || '2202 2020 **** ****';
+    const recipientName = recipientData.name || 'ООО "ФазерВинд"';
+    const bankName = recipientData.bank_name || 'Т-Банк';
+    const qrData = `https://qr.nspk.ru/?type=01&bank=100000000009&sum=${(amount / 100).toFixed(2)}&curr=RUB&recipient=${phone}&purpose=Оплата%20заказа%20${orderNumber}`;
+    
+    const receiptHTML = `
+        <!DOCTYPE html>
+        <html>
+        <head><meta charset="UTF-8"><title>Квитанция ${orderNumber}</title>
+        <style>
+            body { font-family: Arial; padding: 20px; max-width: 800px; margin: 0 auto; }
+            .header { text-align: center; border-bottom: 2px solid #00aaff; padding-bottom: 15px; margin-bottom: 20px; }
+            .section { border: 1px solid #ddd; padding: 15px; margin: 15px 0; border-radius: 8px; }
+            .row { display: flex; justify-content: space-between; margin: 8px 0; }
+            .label { font-weight: bold; }
+            .total { font-size: 24px; font-weight: bold; text-align: center; color: #00aaff; margin: 20px 0; }
+            .qr { text-align: center; margin: 20px 0; }
+            .footer { text-align: center; font-size: 10px; margin-top: 30px; padding-top: 15px; border-top: 1px solid #ddd; }
+        </style>
+        </head>
+        <body>
+            <div class="header"><h2>FW WALLET</h2><p>КВИТАНЦИЯ ОБ ОПЛАТЕ № ${orderNumber}</p></div>
+            <div class="section"><div class="row"><div class="label">Дата операции:</div><div>${date}</div></div></div>
+            <div class="section"><div class="row"><div class="label">Получатель:</div><div>${recipientName}</div></div>
+            <div class="row"><div class="label">Номер карты:</div><div>${cardNumber}</div></div>
+            <div class="row"><div class="label">Банк получателя:</div><div>${bankName}</div></div>
+            <div class="row"><div class="label">Назначение:</div><div>Оплата заказа ${orderNumber}</div></div></div>
+            <div class="total">СУММА: ${amount.toLocaleString()} ₽</div>
+            <div class="qr"><div id="receiptQR" style="display:inline-block;"></div></div>
+            <div class="footer">FW Wallet — платёжный сервис FurtherWind<br>Служба поддержки: +7 (800) 777-88-99</div>
+            <script src="https://cdn.jsdelivr.net/npm/qrcodejs2@0.0.2/qrcode.min.js"><\/script>
+            <script>setTimeout(() => { new QRCode(document.getElementById('receiptQR'), { text: '${qrData}', width: 120, height: 120 }); }, 100);<\/script>
+        </body>
+        </html>
+    `;
+    
+    const element = document.createElement('div');
+    element.innerHTML = receiptHTML;
+    document.body.appendChild(element);
+    
+    const script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+    script.onload = () => {
+        html2pdf().from(element).set({ margin: [0.5, 0.5, 0.5, 0.5], filename: `kvitanciya_${orderNumber}.pdf`, html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'a4' } }).save().then(() => {
+            document.body.removeChild(element);
+            window.showNotification('Квитанция скачана');
+        });
+    };
+    document.head.appendChild(script);
+};
+
+// Отрисовка банков
+window.renderBanks = function() {
+    const grid = document.getElementById('banksGrid');
+    grid.innerHTML = '';
+    banks.forEach(bank => {
+        const card = document.createElement('div');
+        card.className = 'bank-card';
+        card.onclick = () => window.openBank(bank);
+        card.innerHTML = `<img class="bank-logo" src="${bank.logo}" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22%2300aaff%22><path d=%22M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2z%22/></svg>'"><div class="bank-name">${bank.name}</div>`;
+        grid.appendChild(card);
+    });
+};
+
+// Уведомления
+window.showNotification = function(message) {
+    const notif = document.createElement('div');
+    notif.style.cssText = `position:fixed;top:20px;right:20px;background:#4CAF50;color:white;padding:12px 20px;border-radius:8px;z-index:9999;animation:slideIn 0.3s;`;
+    notif.textContent = message;
+    document.body.appendChild(notif);
+    setTimeout(() => notif.remove(), 3000);
+};
+
+// Инициализация
+document.addEventListener('DOMContentLoaded', function() {
+    window.loadOrderData();
+    window.loadRecipientData();
+    window.renderBanks();
+    if(localStorage.getItem("theme") == "dark") document.body.classList.add("dark");
+});
+
+window.toggleTheme = function() {
+    document.body.classList.toggle("dark");
+    localStorage.setItem("theme", document.body.classList.contains("dark") ? "dark" : "light");
+};
+
+const animStyle = document.createElement('style');
+animStyle.textContent = `@keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }`;
+document.head.appendChild(animStyle);
+</script>
+</body>
+</html>
