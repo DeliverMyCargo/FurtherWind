@@ -493,7 +493,7 @@
 <header>
     <div class="container header-inner">
         <div class="logo-block" onclick="window.location='index.html'">
-            <img src="images/logo.jpg" onerror="this.style.display='none'">
+            <img src="images/logo.png" onerror="this.style.display='none'">
             <h2>FurtherWind</h2>
         </div>
         <nav>
@@ -551,19 +551,19 @@
         <h3>📦 Что перевозим</h3>
         <div class="select-cargo">
             <div class="cargo-card" data-type="letter" onclick="selectCargo(this)">
-                <img src="images/letter.png" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2260%22 height=%2260%22 viewBox=%220 0 24 24%22 fill=%22%2300aaff%22><path d=%22M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z%22/></svg>'">
+                <img src="images/letter.png" onerror="this.textContent='✉️'">
                 <br>Письмо
             </div>
             <div class="cargo-card" data-type="package" onclick="selectCargo(this)">
-                <img src="images/package.png" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2260%22 height=%2260%22 viewBox=%220 0 24 24%22 fill=%22%2300aaff%22><path d=%22M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zM7 9h10v2H7zm0 4h6v2H7z%22/></svg>'">
+                <img src="images/package.png" onerror="this.textContent='📦'">
                 <br>Посылка
             </div>
             <div class="cargo-card" data-type="move" onclick="selectCargo(this)">
-                <img src="images/move.png" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2260%22 height=%2260%22 viewBox=%220 0 24 24%22 fill=%22%2300aaff%22><path d=%22M19 9.5L15.5 13H18v4H6v-4h2.5L5 9.5 7.5 7H6V3h12v4h-1.5L19 9.5z%22/></svg>'">
+                <img src="images/move.png" onerror="this.textContent='🚚'">
                 <br>Переезд
             </div>
             <div class="cargo-card" data-type="dedicated" onclick="selectCargo(this)">
-                <img src="images/truck.png" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2260%22 height=%2260%22 viewBox=%220 0 24 24%22 fill=%22%2300aaff%22><path d=%22M18 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm1.5-9H17V12h4.46L19.5 9.5zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm15-8L21 9h-3V5H4v10h2.76c.55-.61 1.35-1 2.24-1 .89 0 1.69.39 2.24 1H16c.55-.61 1.35-1 2.24-1 .89 0 1.69.39 2.24 1H20v-4h1.5V8h1V6h-1.5V4.5z%22/></svg>'">
+                <img src="images/truck.png" onerror="this.textContent='🚛'">
                 <br>Выделенный транспорт
             </div>
         </div>
@@ -573,32 +573,32 @@
             <h4>Выберите размер коробки</h4>
             <div class="select-package">
                 <div class="package-card" data-dim="17x12x9" data-weight="0.5" onclick="selectPackage(this)">
-                    <img src="images/packagexs.svg" onerror="this.textContent='📦'">
+                    <img src="images/packagexs.svg" onerror="this.textContent='XS'">
                     <br>XS
                     <div class="hover-info">17×12×9 см, до 0.5 кг</div>
                 </div>
                 <div class="package-card" data-dim="23x19x10" data-weight="2" onclick="selectPackage(this)">
-                    <img src="images/packages.svg" onerror="this.textContent='📦'">
+                    <img src="images/packages.svg" onerror="this.textContent='S'">
                     <br>S
                     <div class="hover-info">23×19×10 см, до 2 кг</div>
                 </div>
                 <div class="package-card" data-dim="33x25x15" data-weight="5" onclick="selectPackage(this)">
-                    <img src="images/packagem.svg" onerror="this.textContent='📦'">
+                    <img src="images/packagem.svg" onerror="this.textContent='M'">
                     <br>M
                     <div class="hover-info">33×25×15 см, до 5 кг</div>
                 </div>
                 <div class="package-card" data-dim="31x25x38" data-weight="12" onclick="selectPackage(this)">
-                    <img src="images/packagel.svg" onerror="this.textContent='📦'">
+                    <img src="images/packagel.svg" onerror="this.textContent='L'">
                     <br>L
                     <div class="hover-info">31×25×38 см, до 12 кг</div>
                 </div>
                 <div class="package-card" data-dim="60x35x30" data-weight="18" onclick="selectPackage(this)">
-                    <img src="images/packagexl.svg" onerror="this.textContent='📦'">
+                    <img src="images/packagexl.svg" onerror="this.textContent='XL'">
                     <br>XL
                     <div class="hover-info">60×35×30 см, до 18 кг</div>
                 </div>
                 <div class="package-card" data-dim="custom" data-weight="0" onclick="selectPackage(this)">
-                    <img src="images/Fura.png" onerror="this.textContent='📐'">
+                    <img src="images/fura.jpg" onerror="this.textContent='📐'">
                     <br>Свой размер
                     <div class="hover-info">Свой размер</div>
                 </div>
@@ -674,15 +674,15 @@
             <h3>🌍 Цены на международную доставку</h3>
             <table class="price-table">
                 <thead>
-                    <tr><th>Страна</th><th>Письмо (до 0.5 кг)</th><th>Посылка (до 2 кг)</th><th>Посылка (до 5 кг)</th><th>Груз (до 10 кг)</th> </tr>
+                    <tr><th>Страна</th><th>Письмо</th><th>Посылка (до 2 кг)</th><th>Посылка (до 5 кг)</th><th>Груз (до 10 кг)</th></tr>
                 </thead>
                 <tbody>
-                    <tr><td>🇧🇾 Беларусь</td><td>300₽</td><td>500₽</td><td>800₽</td><td>1200₽</td> </tr>
-                    <tr><td>🇰🇿 Казахстан</td><td>350₽</td><td>600₽</td><td>900₽</td><td>1500₽</td> </tr>
-                    <tr><td>🇨🇳 Китай</td><td>500₽</td><td>900₽</td><td>1500₽</td><td>2500₽</td> </tr>
-                    <tr><td>🇹🇷 Турция</td><td>450₽</td><td>800₽</td><td>1300₽</td><td>2000₽</td> </tr>
-                    <tr><td>🇪🇺 Европа</td><td>600₽</td><td>1000₽</td><td>1800₽</td><td>3000₽</td> </tr>
-                    <tr><td>🇺🇸 США</td><td>800₽</td><td>1500₽</td><td>2500₽</td><td>4000₽</td> </tr>
+                    <tr><td>🇧🇾 Беларусь</td><td>300₽</td><td>500₽</td><td>800₽</td><td>1200₽</td></tr>
+                    <tr><td>🇰🇿 Казахстан</td><td>350₽</td><td>600₽</td><td>900₽</td><td>1500₽</td></tr>
+                    <tr><td>🇨🇳 Китай</td><td>500₽</td><td>900₽</td><td>1500₽</td><td>2500₽</td></tr>
+                    <tr><td>🇹🇷 Турция</td><td>450₽</td><td>800₽</td><td>1300₽</td><td>2000₽</td></tr>
+                    <tr><td>🇪🇺 Европа</td><td>600₽</td><td>1000₽</td><td>1800₽</td><td>3000₽</td></tr>
+                    <tr><td>🇺🇸 США</td><td>800₽</td><td>1500₽</td><td>2500₽</td><td>4000₽</td></tr>
                 </tbody>
             </table>
         </div>
