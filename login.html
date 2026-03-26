@@ -736,25 +736,34 @@ async function checkAuth() {
 // ======================
 // ЗАГРУЗКА ЗАКАЗОВ
 // ======================
+// Сохраняем заказы в кэш
 async function loadOrders() {
-    if (!currentUser) return;
-    
-    const grid = document.getElementById('ordersGrid');
-    grid.innerHTML = '<div class="loading">Загрузка заказов...</div>';
-    
-    try {
-        const { data: orders, error } = await supabaseClient
-            .from('orders')
-            .select('*')
-            .eq('user_id', currentUser.id)
-            .order('created_at', { ascending: false });
-        
-        if (error) throw error;
-        
-        if (!orders || orders.length === 0) {
-            grid.innerHTML = '<div style="text-align:center; padding:40px;">У вас пока нет заказов</div>';
+    // Пытаемся загрузить из кэша
+    const cached = localStorage.getItem(`orders_${currentUser.id}`);
+    if (cached) {
+        const { data, timestamp } = JSON.parse(cached);
+        if (Date.now() - timestamp < 60000) { // 1 минута
+            renderOrders(data);
             return;
         }
+    }
+    
+    // Если кэш старый — идём в базу
+    const { data: orders, error } = await supabaseClient
+        .from('orders')
+        .select('order_number, status, from_address, to_address, price, created_at, cargo_type')
+        .eq('user_id', currentUser.id)
+        .order('created_at', { ascending: false })
+        .limit(20);
+    
+    if (orders) {
+        localStorage.setItem(`orders_${currentUser.id}`, JSON.stringify({
+            data: orders,
+            timestamp: Date.now()
+        }));
+        renderOrders(orders);
+    }
+
         
         grid.innerHTML = '';
         
