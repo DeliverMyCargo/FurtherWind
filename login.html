@@ -66,10 +66,6 @@
             background:var(--accent);
             color:#fff;
         }
-        nav a.active{
-            background:var(--accent);
-            color:#fff;
-        }
         .theme-toggle{
             cursor:pointer;
             margin-right:5px;
@@ -162,10 +158,6 @@
             margin:0;
             color:var(--accent);
         }
-        .cabinet-title p{
-            margin:5px 0 0;
-            opacity:0.7;
-        }
         .logout-btn{
             padding:10px 20px;
             background:#ff4444;
@@ -214,31 +206,6 @@
             border-radius:10px;
             padding:25px;
         }
-        .loading {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 10px;
-}
-.loading::after {
-    content: '';
-    width: 20px;
-    height: 20px;
-    border: 2px solid var(--accent);
-    border-top-color: transparent;
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-}
-@keyframes spin {
-    to { transform: rotate(360deg); }
-}
-        .profile-section h3{
-            margin-top:0;
-            color:var(--accent);
-            display:flex;
-            align-items:center;
-            gap:10px;
-        }
         .profile-field{
             margin-bottom:15px;
         }
@@ -273,7 +240,6 @@
             padding:40px;
             color:var(--accent);
         }
-        /* Карточки заказов */
         .orders-grid{
             display:grid;
             grid-template-columns:repeat(auto-fill, minmax(350px, 1fr));
@@ -286,10 +252,10 @@
             padding:20px;
             transition:0.3s;
             border:1px solid var(--border);
+            cursor:pointer;
         }
         .order-card:hover{
             transform:translateY(-3px);
-            box-shadow:0 10px 20px rgba(0,170,255,0.1);
             border-color:var(--accent);
         }
         .order-header{
@@ -316,16 +282,6 @@
         .status-shipped{ background:#2196F3; color:#fff; }
         .status-delivered{ background:#4CAF50; color:#fff; }
         .status-cancelled{ background:#ff4444; color:#fff; }
-        .order-info{
-            margin:10px 0;
-            font-size:14px;
-        }
-        .order-info p{
-            margin:8px 0;
-            display:flex;
-            align-items:center;
-            gap:10px;
-        }
         .order-price{
             font-size:18px;
             font-weight:bold;
@@ -345,26 +301,11 @@
             border-radius:5px;
             cursor:pointer;
             font-weight:bold;
-            transition:0.3s;
         }
         .order-btn.track{
             background:var(--accent);
             color:#fff;
         }
-        .order-btn.repeat{
-            background:var(--card);
-            border:1px solid var(--border);
-            color:var(--text);
-        }
-        .order-btn.pay{
-            background:#4CAF50;
-            color:#fff;
-        }
-        .order-btn.cancel{
-            background:#ff4444;
-            color:#fff;
-        }
-        /* Сохранённые адреса */
         .addresses-grid{
             display:grid;
             grid-template-columns:repeat(auto-fill, minmax(300px, 1fr));
@@ -375,26 +316,10 @@
             background:var(--card);
             border-radius:10px;
             padding:15px;
-            transition:0.3s;
-            border:1px solid var(--border);
-            position:relative;
-        }
-        .address-card.default{
-            border-left:4px solid var(--accent);
-        }
-        .address-card:hover{
-            transform:translateY(-2px);
         }
         .address-text{
             font-size:14px;
             margin-bottom:10px;
-        }
-        .address-type{
-            font-size:11px;
-            padding:3px 8px;
-            background:var(--bg);
-            border-radius:12px;
-            display:inline-block;
         }
         .address-actions{
             display:flex;
@@ -407,7 +332,6 @@
             border-radius:5px;
             cursor:pointer;
             background:var(--bg);
-            color:var(--text);
         }
         .add-address-btn{
             margin-top:20px;
@@ -419,53 +343,6 @@
             cursor:pointer;
             color:var(--accent);
             font-weight:bold;
-        }
-        .password-strength{
-            margin:10px 0;
-            height:5px;
-            border-radius:3px;
-            background:var(--border);
-            overflow:hidden;
-        }
-        .strength-bar{
-            height:100%;
-            width:0;
-            transition:0.3s;
-        }
-        .strength-weak{ background:#ff4444; width:25%; }
-        .strength-medium{ background:#ffa700; width:50%; }
-        .strength-good{ background:#ffd700; width:75%; }
-        .strength-strong{ background:#4CAF50; width:100%; }
-        .strength-text{
-            font-size:12px;
-            text-align:right;
-            margin-top:5px;
-        }
-        .captcha-box{
-            background:var(--bg);
-            border-radius:6px;
-            padding:15px;
-            margin:15px 0;
-            display:flex;
-            align-items:center;
-            gap:10px;
-        }
-        .captcha-image{
-            background:linear-gradient(45deg, #00aaff, #0066aa);
-            color:white;
-            padding:10px 20px;
-            border-radius:4px;
-            font-size:24px;
-            font-weight:bold;
-            letter-spacing:5px;
-            user-select:none;
-        }
-        .captcha-input{
-            flex:1;
-        }
-        .captcha-refresh{
-            cursor:pointer;
-            color:var(--accent);
         }
         .notification-popup{
             position:fixed;
@@ -532,18 +409,6 @@
             <input type="tel" id="registerPhone" placeholder="Телефон (+7XXXXXXXXXX)">
             <input type="email" id="registerEmail" placeholder="Email">
             <input type="password" id="registerPassword" placeholder="Пароль">
-            
-            <div class="password-strength">
-                <div id="strengthBar" class="strength-bar"></div>
-            </div>
-            <div id="strengthText" class="strength-text"></div>
-            
-            <div class="captcha-box">
-                <div class="captcha-image" id="captchaImage">1234</div>
-                <input type="text" id="captchaInput" class="captcha-input" placeholder="Введите код">
-                <span class="material-icons captcha-refresh" onclick="window.refreshCaptcha()">refresh</span>
-            </div>
-            
             <div id="registerError" class="auth-error"></div>
             <div id="registerSuccess" class="auth-success"></div>
             <button class="auth-btn" id="registerBtn" onclick="window.handleRegister()">Зарегистрироваться</button>
@@ -567,47 +432,34 @@
             <div class="tab" onclick="window.switchCabinetTab('addresses', this)">📍 Сохранённые адреса</div>
         </div>
         
-        <!-- Профиль -->
         <div id="profile" class="tab-content active">
             <div class="profile-grid">
                 <div class="profile-section">
-                    <h3><span class="material-icons">person</span> Личные данные</h3>
+                    <h3>Личные данные</h3>
                     <div class="profile-field"><label>Имя</label><input type="text" id="profileName"></div>
-                    <div class="profile-field"><label>Email</label><input type="email" id="profileEmail" readonly style="background:var(--card);"></div>
-                    <div class="profile-field"><label>Телефон</label><input type="tel" id="profilePhone" placeholder="+7 (___) ___-__-__"></div>
+                    <div class="profile-field"><label>Email</label><input type="email" id="profileEmail" readonly></div>
+                    <div class="profile-field"><label>Телефон</label><input type="tel" id="profilePhone"></div>
                     <button class="save-btn" onclick="window.saveProfile()">Сохранить</button>
                 </div>
                 <div class="profile-section">
-                    <h3><span class="material-icons">security</span> Безопасность</h3>
-                    <div class="profile-field"><label>Новый пароль</label><input type="password" id="newPassword" placeholder="Новый пароль"></div>
-                    <div class="profile-field"><label>Подтверждение</label><input type="password" id="confirmPassword" placeholder="Подтвердите пароль"></div>
+                    <h3>Безопасность</h3>
+                    <div class="profile-field"><label>Новый пароль</label><input type="password" id="newPassword"></div>
+                    <div class="profile-field"><label>Подтверждение</label><input type="password" id="confirmPassword"></div>
                     <button class="save-btn" onclick="window.changePassword()">Изменить пароль</button>
                 </div>
             </div>
-            
-            <div class="profile-section" style="margin-top: 20px; border-top: 1px solid var(--border); padding-top: 20px;">
-                <h3><span class="material-icons" style="color:#ff4444;">delete_forever</span> Опасная зона</h3>
-                <button class="save-btn" id="deleteAccountBtn" style="background:#ff4444;" onclick="window.deleteAccount()">
-                    🗑️ Удалить аккаунт
-                </button>
+            <div class="profile-section" style="margin-top:20px;">
+                <button class="save-btn" id="deleteAccountBtn" style="background:#ff4444;" onclick="window.deleteAccount()">🗑️ Удалить аккаунт</button>
             </div>
         </div>
         
-        <!-- Мои заказы -->
         <div id="orders" class="tab-content">
-            <div class="orders-grid" id="ordersGrid">
-                <div class="loading">Загрузка заказов...</div>
-            </div>
+            <div class="orders-grid" id="ordersGrid"><div class="loading">Загрузка...</div></div>
         </div>
         
-        <!-- Сохранённые адреса -->
         <div id="addresses" class="tab-content">
-            <div class="addresses-grid" id="addressesGrid">
-                <div class="loading">Загрузка адресов...</div>
-            </div>
-            <div class="add-address-btn" onclick="window.addNewAddress()">
-                <span class="material-icons" style="vertical-align:middle;">add</span> Добавить новый адрес
-            </div>
+            <div class="addresses-grid" id="addressesGrid"><div class="loading">Загрузка...</div></div>
+            <div class="add-address-btn" onclick="window.addNewAddress()">+ Добавить новый адрес</div>
         </div>
     </div>
 </div>
@@ -615,15 +467,11 @@
 <footer>© 2026 FurtherWind</footer>
 
 <script>
-// Supabase client
 const supabaseClient = supabase.createClient(
     'https://pnheueabzgwcyyisyaur.supabase.co',
     'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBuaGV1ZWFiemd3Y3l5aXN5YXVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3MjY0MTUsImV4cCI6MjA4OTMwMjQxNX0.VtMdKZONRK1_6J2ZPqwWknDYd9_vDMcr1Jin06UNCv8'
 );
 
-// ======================
-// ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
-// ======================
 let currentUser = null;
 
 // ======================
@@ -641,60 +489,6 @@ if(localStorage.getItem("theme") == "dark") {
 }
 
 // ======================
-// КАПЧА
-// ======================
-let currentCaptcha = '';
-
-window.refreshCaptcha = function() {
-    currentCaptcha = Math.floor(1000 + Math.random() * 9000).toString();
-    document.getElementById('captchaImage').textContent = currentCaptcha;
-};
-setTimeout(() => window.refreshCaptcha(), 100);
-
-// ======================
-// ИНДИКАТОР НАДЕЖНОСТИ ПАРОЛЯ
-// ======================
-document.addEventListener('DOMContentLoaded', function() {
-    const passwordInput = document.getElementById('registerPassword');
-    if(passwordInput) {
-        passwordInput.addEventListener('input', function() {
-            const password = this.value;
-            const strengthBar = document.getElementById('strengthBar');
-            const strengthText = document.getElementById('strengthText');
-            
-            let strength = 0;
-            if(password.length >= 6) strength++;
-            if(password.length >= 8) strength++;
-            if(/[A-Z]/.test(password)) strength++;
-            if(/[0-9]/.test(password)) strength++;
-            if(/[^A-Za-z0-9]/.test(password)) strength++;
-            
-            strengthBar.className = 'strength-bar';
-            if(password.length === 0) {
-                strengthBar.style.width = '0';
-                strengthText.textContent = '';
-            } else if(strength <= 2) {
-                strengthBar.classList.add('strength-weak');
-                strengthText.textContent = 'Слабый пароль';
-                strengthText.style.color = '#ff4444';
-            } else if(strength <= 3) {
-                strengthBar.classList.add('strength-medium');
-                strengthText.textContent = 'Средний пароль';
-                strengthText.style.color = '#ffa700';
-            } else if(strength <= 4) {
-                strengthBar.classList.add('strength-good');
-                strengthText.textContent = 'Хороший пароль';
-                strengthText.style.color = '#ffd700';
-            } else {
-                strengthBar.classList.add('strength-strong');
-                strengthText.textContent = 'Надежный пароль';
-                strengthText.style.color = '#4CAF50';
-            }
-        });
-    }
-});
-
-// ======================
 // ПЕРЕКЛЮЧЕНИЕ
 // ======================
 window.switchAuthTab = function(tab) {
@@ -706,7 +500,6 @@ window.switchAuthTab = function(tab) {
     } else {
         document.querySelectorAll('.auth-tab')[1].classList.add('active');
         document.getElementById('registerForm').classList.add('active');
-        window.refreshCaptcha();
     }
 };
 
@@ -718,352 +511,41 @@ window.switchCabinetTab = function(tabName, el) {
 };
 
 // ======================
-// ПРОВЕРКА СЕССИИ
+// АВТОРИЗАЦИЯ
 // ======================
 async function checkAuth() {
-    try {
-        const { data: { session } } = await supabaseClient.auth.getSession();
-        if (session) {
-            currentUser = session.user;
-            const { data: profile } = await supabaseClient
-                .from('profiles')
-                .select('full_name, phone')
-                .eq('id', session.user.id)
-                .single();
-            
-            document.getElementById('authContainer').style.display = 'none';
-            document.getElementById('cabinetContainer').style.display = 'block';
-            document.getElementById('userGreeting').textContent = `Здравствуйте, ${profile?.full_name || session.user.email || 'пользователь'}!`;
-            document.getElementById('profileName').value = profile?.full_name || '';
-            document.getElementById('profileEmail').value = session.user.email || '';
-            document.getElementById('profilePhone').value = profile?.phone || '';
-            
-            loadOrders();
-            loadAddresses();
-        } else {
-            document.getElementById('authContainer').style.display = 'block';
-            document.getElementById('cabinetContainer').style.display = 'none';
-        }
-    } catch (e) {
-        console.log('Ошибка проверки сессии:', e);
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (session) {
+        currentUser = session.user;
+        const { data: profile } = await supabaseClient
+            .from('profiles')
+            .select('full_name, phone')
+            .eq('id', session.user.id)
+            .single();
+        
+        document.getElementById('authContainer').style.display = 'none';
+        document.getElementById('cabinetContainer').style.display = 'block';
+        document.getElementById('userGreeting').textContent = `Здравствуйте, ${profile?.full_name || session.user.email || 'пользователь'}!`;
+        document.getElementById('profileName').value = profile?.full_name || '';
+        document.getElementById('profileEmail').value = session.user.email || '';
+        document.getElementById('profilePhone').value = profile?.phone || '';
+        
+        loadOrders();
+        loadAddresses();
+    } else {
         document.getElementById('authContainer').style.display = 'block';
         document.getElementById('cabinetContainer').style.display = 'none';
     }
 }
 
 // ======================
-// ЗАГРУЗКА ЗАКАЗОВ
-// ======================
-// Сохраняем заказы в кэш
-async function loadOrders() {
-    if (!currentUser) return;
-    
-    const grid = document.getElementById('ordersGrid');
-    grid.innerHTML = '<div class="loading">Загрузка заказов...</div>';
-    
-    try {
-        // Добавляем задержку для анимации (опционально)
-        await new Promise(r => setTimeout(r, 300));
-        
-        const { data: orders, error } = await supabaseClient
-            .from('orders')
-            .select('order_number, status, from_address, to_address, price, created_at, cargo_type')
-            .eq('user_id', currentUser.id)
-            .order('created_at', { ascending: false })
-            .limit(20); // ← Ограничиваем количество
-        
-        if (error) throw error;
-        
-        if (!orders || orders.length === 0) {
-            grid.innerHTML = '<div style="text-align:center; padding:40px;">У вас пока нет заказов</div>';
-            return;
-        }
-        
-        grid.innerHTML = '';
-        
-        orders.forEach(order => {
-            const statusMap = {
-                'pending_payment': { class: 'status-pending_payment', text: '⏳ Ожидает оплаты' },
-                'paid': { class: 'status-paid', text: '✅ Оплачен' },
-                'processing': { class: 'status-processing', text: '🔄 В обработке' },
-                'shipped': { class: 'status-shipped', text: '🚚 Отправлен' },
-                'delivered': { class: 'status-delivered', text: '📦 Доставлен' },
-                'cancelled': { class: 'status-cancelled', text: '❌ Отменен' }
-            };
-            const status = statusMap[order.status] || { class: 'status-pending_payment', text: '⏳ Ожидает оплаты' };
-            
-            const cargoTypeText = {
-                'letter': 'Письмо',
-                'package': 'Посылка',
-                'move': 'Переезд',
-                'dedicated': 'Выделенный транспорт'
-            }[order.cargo_type] || order.cargo_type;
-            
-            const canPay = order.status === 'pending_payment';
-            const canCancel = order.status === 'pending_payment' || order.status === 'paid';
-            
-            const card = document.createElement('div');
-            card.className = 'order-card';
-            card.style.cursor = 'pointer';
-            card.onclick = () => {
-                window.location.href = `order-detail.html?order=${order.order_number}`;
-            };
-            card.innerHTML = `
-                <div class="order-header">
-                    <span class="order-number">${order.order_number}</span>
-                    <span class="order-status ${status.class}">${status.text}</span>
-                </div>
-                <div class="order-info">
-                    <p><span class="material-icons">date_range</span> ${new Date(order.created_at).toLocaleDateString()}</p>
-                    <p><span class="material-icons">location_on</span> ${order.from_address}</p>
-                    <p><span class="material-icons">location_on</span> ${order.to_address}</p>
-                    <p><span class="material-icons">inventory</span> ${cargoTypeText}</p>
-                </div>
-                <div class="order-price">${order.price.toLocaleString()} ₽</div>
-                <div class="order-actions">
-                    ${canPay ? `<button class="order-btn pay" onclick="event.stopPropagation(); window.payOrder('${order.order_number}')">💳 Оплатить</button>` : ''}
-                    ${canCancel ? `<button class="order-btn cancel" onclick="event.stopPropagation(); window.cancelOrder('${order.order_number}')">❌ Отменить</button>` : ''}
-                    <button class="order-btn track" onclick="event.stopPropagation(); window.viewOrderDetails('${order.order_number}')">📍 Детали</button>
-                    <button class="order-btn repeat" onclick="event.stopPropagation(); window.repeatOrder('${order.order_number}')">🔄 Повторить</button>
-                </div>
-            `;
-            grid.appendChild(card);
-        });
-        
-    } catch (error) {
-        console.error('Ошибка загрузки заказов:', error);
-        grid.innerHTML = '<div style="text-align:center; padding:40px;">Ошибка загрузки заказов</div>';
-    }
-}
-
-// Показать детали заказа
-function showOrderDetails(order) {
-    const cargoTypeText = {
-        'letter': 'Письмо',
-        'package': 'Посылка',
-        'move': 'Переезд',
-        'dedicated': 'Выделенный транспорт'
-    }[order.cargo_type] || order.cargo_type;
-    
-    let details = `
-        📦 Заказ: ${order.order_number}
-        📅 Дата: ${new Date(order.created_at).toLocaleString()}
-        📍 Откуда: ${order.from_address}
-        📍 Куда: ${order.to_address}
-        📏 Расстояние: ${order.distance || '?'} км
-        🚚 Тип: ${cargoTypeText}
-        💰 Сумма: ${order.price.toLocaleString()} ₽
-        👤 Отправитель: ${order.sender_name || 'не указан'}
-        📞 Телефон отправителя: ${order.sender_phone || 'не указан'}
-        👤 Получатель: ${order.receiver_name || 'не указан'}
-        📞 Телефон получателя: ${order.receiver_phone || 'не указан'}
-    `;
-    
-    if (order.package_size) details += `\n📦 Размер коробки: ${order.package_size}`;
-    if (order.truck_type) details += `\n🚛 Транспорт: ${order.truck_type}`;
-    if (order.options) {
-        const opts = JSON.parse(order.options || '{}');
-        const optsList = Object.keys(opts).map(k => {
-            const names = { insurance: 'Страховка', secure: 'Надёжная сделка', sms: 'SMS уведомления', pack: 'Упаковка', documents: 'Документы' };
-            return names[k];
-        }).filter(Boolean);
-        if (optsList.length) details += `\n✨ Доп. услуги: ${optsList.join(', ')}`;
-    }
-    
-    alert(details);
-}
-
-// Оплата заказа
-window.payOrder = function(orderNumber) {
-    const orderPrice = localStorage.getItem('paymentAmount');
-    localStorage.setItem('paymentAmount', orderPrice);
-    localStorage.setItem('orderNumber', orderNumber);
-    window.location.href = `payment.html?order_id=${orderNumber}`;
-};
-
-// Отмена заказа
-window.cancelOrder = async function(orderNumber) {
-    if (!confirm(`Отменить заказ ${orderNumber}?`)) return;
-    
-    try {
-        const { error } = await supabaseClient
-            .from('orders')
-            .update({ status: 'cancelled' })
-            .eq('order_number', orderNumber)
-            .eq('user_id', currentUser.id);
-        
-        if (error) throw error;
-        showNotification('Заказ отменен');
-        loadOrders();
-    } catch (error) {
-        showNotification('Ошибка: ' + error.message);
-    }
-};
-
-// ======================
-// ЗАГРУЗКА СОХРАНЁННЫХ АДРЕСОВ
-// ======================
-async function loadAddresses() {
-    if (!currentUser) return;
-    
-    const grid = document.getElementById('addressesGrid');
-    grid.innerHTML = '<div class="loading">Загрузка адресов...</div>';
-    
-    try {
-        const { data: addresses, error } = await supabaseClient
-            .from('saved_addresses')
-            .select('*')
-            .eq('user_id', currentUser.id)
-            .order('is_default', { ascending: false });
-        
-        if (error) throw error;
-        
-        if (!addresses || addresses.length === 0) {
-            grid.innerHTML = '<div style="text-align:center; padding:40px;">У вас пока нет сохранённых адресов</div>';
-            return;
-        }
-        
-        grid.innerHTML = '';
-        
-        addresses.forEach(addr => {
-            const typeText = { 'home': '🏠 Дом', 'work': '💼 Работа', 'other': '📍 Другое' }[addr.address_type] || '📍 Другое';
-            const card = document.createElement('div');
-            card.className = `address-card ${addr.is_default ? 'default' : ''}`;
-            card.innerHTML = `
-                <div class="address-text">${addr.address}</div>
-                <div class="address-type">${typeText}</div>
-                <div class="address-actions">
-                    ${!addr.is_default ? `<button onclick="window.setDefaultAddress('${addr.id}')">★ По умолчанию</button>` : ''}
-                    <button onclick="window.editAddress('${addr.id}', '${addr.address.replace(/'/g, "\\'")}', '${addr.address_type}')">✎ Редактировать</button>
-                    <button onclick="window.deleteAddress('${addr.id}')">✕ Удалить</button>
-                </div>
-            `;
-            grid.appendChild(card);
-        });
-        
-    } catch (error) {
-        console.error('Ошибка загрузки адресов:', error);
-        grid.innerHTML = '<div style="text-align:center; padding:40px;">Ошибка загрузки адресов</div>';
-    }
-}
-
-// ======================
-// ДЕЙСТВИЯ С АДРЕСАМИ
-// ======================
-window.addNewAddress = async function() {
-    const address = prompt('Введите адрес:');
-    if (!address) return;
-    
-    const addressType = prompt('Тип адреса (home - дом, work - работа, other - другое):', 'other');
-    const validTypes = ['home', 'work', 'other'];
-    const type = validTypes.includes(addressType) ? addressType : 'other';
-    
-    try {
-        const { error } = await supabaseClient
-            .from('saved_addresses')
-            .insert({
-                user_id: currentUser.id,
-                address: address,
-                address_type: type
-            });
-        
-        if (error) throw error;
-        
-        showNotification('Адрес добавлен');
-        loadAddresses();
-        
-    } catch (error) {
-        showNotification('Ошибка: ' + error.message);
-    }
-};
-
-window.setDefaultAddress = async function(id) {
-    try {
-        await supabaseClient
-            .from('saved_addresses')
-            .update({ is_default: false })
-            .eq('user_id', currentUser.id);
-        
-        const { error } = await supabaseClient
-            .from('saved_addresses')
-            .update({ is_default: true })
-            .eq('id', id);
-        
-        if (error) throw error;
-        
-        showNotification('Адрес по умолчанию изменен');
-        loadAddresses();
-        
-    } catch (error) {
-        showNotification('Ошибка: ' + error.message);
-    }
-};
-
-window.editAddress = async function(id, oldAddress, oldType) {
-    const newAddress = prompt('Измените адрес:', oldAddress);
-    if (!newAddress) return;
-    
-    const addressType = prompt('Тип адреса (home - дом, work - работа, other - другое):', oldType);
-    const validTypes = ['home', 'work', 'other'];
-    const type = validTypes.includes(addressType) ? addressType : 'other';
-    
-    try {
-        const { error } = await supabaseClient
-            .from('saved_addresses')
-            .update({ address: newAddress, address_type: type })
-            .eq('id', id);
-        
-        if (error) throw error;
-        
-        showNotification('Адрес обновлен');
-        loadAddresses();
-        
-    } catch (error) {
-        showNotification('Ошибка: ' + error.message);
-    }
-};
-
-window.deleteAddress = async function(id) {
-    if (!confirm('Удалить адрес?')) return;
-    
-    try {
-        const { error } = await supabaseClient
-            .from('saved_addresses')
-            .delete()
-            .eq('id', id);
-        
-        if (error) throw error;
-        
-        showNotification('Адрес удален');
-        loadAddresses();
-        
-    } catch (error) {
-        showNotification('Ошибка: ' + error.message);
-    }
-};
-
-// ======================
-// ДЕЙСТВИЯ С ЗАКАЗАМИ
-// ======================
-window.trackOrder = function(orderNumber) {
-    alert(`Отслеживание заказа ${orderNumber}\n\nДля посылок и писем доступен трекинг по номеру.\nДругие типы заказов отслеживаются по звонку оператора.`);
-};
-
-window.repeatOrder = function(orderNumber) {
-    if (confirm(`Повторить заказ ${orderNumber}?`)) {
-        window.location.href = `order.html?repeat=${orderNumber}`;
-    }
-};
-
-// ======================
-// РЕГИСТРАЦИЯ
+// РЕГИСТРАЦИЯ (простая)
 // ======================
 window.handleRegister = async function() {
     const name = document.getElementById('registerName').value;
     const phone = document.getElementById('registerPhone').value;
     const email = document.getElementById('registerEmail').value;
     const password = document.getElementById('registerPassword').value;
-    const captcha = document.getElementById('captchaInput').value;
     const errorDiv = document.getElementById('registerError');
     const successDiv = document.getElementById('registerSuccess');
     const btn = document.getElementById('registerBtn');
@@ -1071,20 +553,14 @@ window.handleRegister = async function() {
     errorDiv.textContent = '';
     successDiv.textContent = '';
     
-    if (!name || !phone || !email || !password || !captcha) {
+    if (!name || !phone || !email || !password) {
         errorDiv.textContent = 'Заполните все поля';
-        return;
-    }
-    
-    if (captcha !== currentCaptcha) {
-        errorDiv.textContent = 'Неверный код с картинки';
-        window.refreshCaptcha();
         return;
     }
     
     const cleanPhone = phone.replace(/\D/g,'');
     if (cleanPhone.length !== 11) {
-        errorDiv.textContent = 'Введите корректный номер телефона (10 цифр после +7)';
+        errorDiv.textContent = 'Введите корректный номер телефона';
         return;
     }
     
@@ -1100,32 +576,21 @@ window.handleRegister = async function() {
         const { data, error } = await supabaseClient.auth.signUp({
             email: email,
             password: password,
-            options: {
-                data: { full_name: name, phone: cleanPhone }
-            }
+            options: { data: { full_name: name, phone: cleanPhone } }
         });
         
         if (error) throw error;
         
         if (data.user) {
-            await supabaseClient
-                .from('profiles')
-                .upsert({
-                    id: data.user.id,
-                    full_name: name,
-                    phone: cleanPhone
-                });
+            await supabaseClient.from('profiles').upsert({
+                id: data.user.id,
+                full_name: name,
+                phone: cleanPhone
+            });
         }
         
-        successDiv.innerHTML = `
-            <div style="text-align:center; padding:15px;">
-                <div style="font-size:14px; color:#4CAF50;">✅ Регистрация успешна!</div>
-                <div style="margin-top:15px;">📧 На почту <strong>${email}</strong> отправлено письмо с подтверждением.</div>
-                <div style="margin-top:10px;">Теперь вы можете войти</div>
-            </div>
-        `;
-        
-        setTimeout(() => window.switchAuthTab('login'), 5000);
+        successDiv.innerHTML = `✅ Регистрация успешна! Проверьте почту и войдите.`;
+        setTimeout(() => window.switchAuthTab('login'), 3000);
         
     } catch (error) {
         errorDiv.textContent = error.message;
@@ -1151,7 +616,7 @@ window.handleLogin = async function() {
     }
     
     try {
-        const { data, error } = await supabaseClient.auth.signInWithPassword({
+        const { error } = await supabaseClient.auth.signInWithPassword({
             email: email,
             password: password
         });
@@ -1162,11 +627,7 @@ window.handleLogin = async function() {
         checkAuth();
         
     } catch (error) {
-        if (error.message.includes('Email not confirmed')) {
-            errorDiv.textContent = 'Email не подтверждён. Проверьте почту и перейдите по ссылке.';
-        } else {
-            errorDiv.textContent = 'Неверный email или пароль';
-        }
+        errorDiv.textContent = 'Неверный email или пароль';
     }
 };
 
@@ -1189,20 +650,12 @@ window.saveProfile = async function() {
     const { data: { session } } = await supabaseClient.auth.getSession();
     
     if (session) {
-        const { error } = await supabaseClient
-            .from('profiles')
-            .upsert({
-                id: session.user.id,
-                full_name: name,
-                phone: cleanPhone
-            });
-        
-        if (error) {
-            showNotification('Ошибка: ' + error.message);
-        } else {
-            showNotification('Данные сохранены');
-            document.getElementById('userGreeting').textContent = `Здравствуйте, ${name || session.user.email}!`;
-        }
+        await supabaseClient.from('profiles').upsert({
+            id: session.user.id,
+            full_name: name,
+            phone: cleanPhone
+        });
+        showNotification('Данные сохранены');
     }
 };
 
@@ -1210,71 +663,38 @@ window.changePassword = async function() {
     const newPass = document.getElementById('newPassword').value;
     const confirm = document.getElementById('confirmPassword').value;
     
-    if (!newPass || !confirm) {
-        showNotification('Заполните поля');
-        return;
-    }
-    
-    if (newPass !== confirm) {
-        showNotification('Пароли не совпадают');
-        return;
-    }
-    
-    if (newPass.length < 6) {
-        showNotification('Пароль минимум 6 символов');
+    if (!newPass || !confirm || newPass !== confirm || newPass.length < 6) {
+        showNotification('Проверьте правильность ввода');
         return;
     }
     
     const { error } = await supabaseClient.auth.updateUser({ password: newPass });
-    
-    if (error) {
-        showNotification('Ошибка: ' + error.message);
-    } else {
-        showNotification('Пароль изменен');
-        document.getElementById('newPassword').value = '';
-        document.getElementById('confirmPassword').value = '';
-    }
+    if (error) showNotification('Ошибка: ' + error.message);
+    else showNotification('Пароль изменен');
 };
 
 // ======================
-// УДАЛЕНИЕ АККАУНТА
+// УДАЛЕНИЕ АККАУНТА (простое и быстрое)
 // ======================
 window.deleteAccount = async function() {
     const { data: { session } } = await supabaseClient.auth.getSession();
+    if (!session) return showNotification('Вы не авторизованы');
     
-    if (!session) {
-        showNotification('Вы не авторизованы');
-        return;
-    }
+    if (!confirm('Удалить аккаунт? Это действие необратимо!')) return;
     
-    const confirmed = confirm(
-        '⚠️ ВНИМАНИЕ! Это действие НЕОБРАТИМО.\n\n' +
-        'Будут удалены:\n' +
-        '• Ваш профиль\n' +
-        '• Все сохраненные адреса\n' +
-        '• История всех заказов\n\n' +
-        'Вы уверены?'
-    );
-    
-    if (!confirmed) return;
-    
-    const email = prompt('Введите ваш email для подтверждения:\n' + session.user.email);
-    if (email !== session.user.email) {
-        showNotification('Email не совпадает');
-        return;
-    }
+    const email = prompt('Введите ваш email для подтверждения:');
+    if (email !== session.user.email) return showNotification('Email не совпадает');
     
     const btn = document.getElementById('deleteAccountBtn');
     btn.disabled = true;
     btn.textContent = 'Удаление...';
-    const userId = session.user.id;
     
     try {
-        await supabaseClient.rpc('delete_user_cascade', { target_user_id: userId });
+        // Удаляем всё через RPC
+        await supabaseClient.rpc('delete_user_cascade', { target_user_id: session.user.id });
         await supabaseClient.auth.signOut();
         showNotification('Аккаунт удален');
         setTimeout(() => window.location.href = 'index.html', 1500);
-        
     } catch (error) {
         showNotification('Ошибка: ' + error.message);
         btn.disabled = false;
@@ -1283,8 +703,135 @@ window.deleteAccount = async function() {
 };
 
 // ======================
-// УВЕДОМЛЕНИЯ
+// ЗАГРУЗКА ЗАКАЗОВ
 // ======================
+async function loadOrders() {
+    if (!currentUser) return;
+    
+    const grid = document.getElementById('ordersGrid');
+    grid.innerHTML = '<div class="loading">Загрузка...</div>';
+    
+    try {
+        const { data: orders, error } = await supabaseClient
+            .from('orders')
+            .select('order_number, status, from_address, to_address, price, created_at, cargo_type')
+            .eq('user_id', currentUser.id)
+            .order('created_at', { ascending: false })
+            .limit(20);
+        
+        if (error) throw error;
+        
+        if (!orders || orders.length === 0) {
+            grid.innerHTML = '<div style="text-align:center; padding:40px;">Нет заказов</div>';
+            return;
+        }
+        
+        grid.innerHTML = '';
+        
+        orders.forEach(order => {
+            const statusMap = {
+                'pending_payment': { class: 'status-pending_payment', text: 'Ожидает оплаты' },
+                'paid': { class: 'status-paid', text: 'Оплачен' },
+                'processing': { class: 'status-processing', text: 'В обработке' },
+                'shipped': { class: 'status-shipped', text: 'Отправлен' },
+                'delivered': { class: 'status-delivered', text: 'Доставлен' },
+                'cancelled': { class: 'status-cancelled', text: 'Отменен' }
+            };
+            const status = statusMap[order.status] || statusMap.pending_payment;
+            
+            const card = document.createElement('div');
+            card.className = 'order-card';
+            card.onclick = () => window.location.href = `order-detail.html?order=${order.order_number}`;
+            card.innerHTML = `
+                <div class="order-header">
+                    <span class="order-number">${order.order_number}</span>
+                    <span class="order-status ${status.class}">${status.text}</span>
+                </div>
+                <div class="order-info">
+                    <p>📅 ${new Date(order.created_at).toLocaleDateString()}</p>
+                    <p>📍 ${order.from_address}</p>
+                    <p>📍 ${order.to_address}</p>
+                </div>
+                <div class="order-price">${order.price.toLocaleString()} ₽</div>
+                <div class="order-actions">
+                    <button class="order-btn track" onclick="event.stopPropagation(); window.location.href='order-detail.html?order=${order.order_number}'">Подробнее</button>
+                </div>
+            `;
+            grid.appendChild(card);
+        });
+        
+    } catch (error) {
+        grid.innerHTML = '<div style="text-align:center; padding:40px;">Ошибка загрузки</div>';
+    }
+}
+
+// ======================
+// СОХРАНЁННЫЕ АДРЕСА
+// ======================
+async function loadAddresses() {
+    if (!currentUser) return;
+    
+    const grid = document.getElementById('addressesGrid');
+    grid.innerHTML = '<div class="loading">Загрузка...</div>';
+    
+    try {
+        const { data: addresses, error } = await supabaseClient
+            .from('saved_addresses')
+            .select('*')
+            .eq('user_id', currentUser.id)
+            .order('is_default', { ascending: false });
+        
+        if (error) throw error;
+        
+        if (!addresses || addresses.length === 0) {
+            grid.innerHTML = '<div style="text-align:center; padding:40px;">Нет сохранённых адресов</div>';
+            return;
+        }
+        
+        grid.innerHTML = '';
+        
+        addresses.forEach(addr => {
+            const typeText = { 'home': '🏠 Дом', 'work': '💼 Работа', 'other': '📍 Другое' }[addr.address_type] || '📍 Другое';
+            const card = document.createElement('div');
+            card.className = 'address-card';
+            card.innerHTML = `
+                <div class="address-text">${addr.address}</div>
+                <div class="address-type">${typeText}</div>
+                <div class="address-actions">
+                    <button onclick="window.deleteAddress('${addr.id}')">Удалить</button>
+                </div>
+            `;
+            grid.appendChild(card);
+        });
+        
+    } catch (error) {
+        grid.innerHTML = '<div style="text-align:center; padding:40px;">Ошибка загрузки</div>';
+    }
+}
+
+window.addNewAddress = async function() {
+    const address = prompt('Введите адрес:');
+    if (!address) return;
+    
+    const addressType = prompt('Тип (home/work/other):', 'other');
+    const type = ['home', 'work', 'other'].includes(addressType) ? addressType : 'other';
+    
+    await supabaseClient.from('saved_addresses').insert({
+        user_id: currentUser.id,
+        address: address,
+        address_type: type
+    });
+    loadAddresses();
+    showNotification('Адрес добавлен');
+};
+
+window.deleteAddress = async function(id) {
+    if (!confirm('Удалить адрес?')) return;
+    await supabaseClient.from('saved_addresses').delete().eq('id', id);
+    loadAddresses();
+    showNotification('Адрес удален');
+};
+
 function showNotification(message) {
     const notif = document.createElement('div');
     notif.className = 'notification-popup';
@@ -1293,30 +840,24 @@ function showNotification(message) {
     setTimeout(() => notif.remove(), 3000);
 }
 
-// ======================
-// МАСКА ТЕЛЕФОНА
-// ======================
-function formatPhone(input) {
-    let x = input.value.replace(/\D/g,'').substring(0,11);
-    if(x.length === 0) { input.value = ''; return; }
-    if(x[0] === '8') x = '7' + x.substring(1);
-    if(x[0] !== '7') x = '7' + x;
-    let f = '+7';
-    if(x.length > 1) f += ' (' + x.substring(1,4);
-    if(x.length >= 4) f += ') ' + x.substring(4,7);
-    if(x.length >= 7) f += '-' + x.substring(7,9);
-    if(x.length >= 9) f += '-' + x.substring(9,11);
-    input.value = f;
-}
-
-// ======================
-// ИНИЦИАЛИЗАЦИЯ
-// ======================
 document.addEventListener('DOMContentLoaded', function() {
-    const phoneInput = document.getElementById('profilePhone');
-    if(phoneInput) phoneInput.addEventListener('input', () => formatPhone(phoneInput));
-    
     checkAuth();
+    
+    const phoneInput = document.getElementById('profilePhone');
+    if(phoneInput) {
+        phoneInput.addEventListener('input', function() {
+            let x = this.value.replace(/\D/g,'').substring(0,11);
+            if(x.length === 0) { this.value = ''; return; }
+            if(x[0] === '8') x = '7' + x.substring(1);
+            if(x[0] !== '7') x = '7' + x;
+            let f = '+7';
+            if(x.length > 1) f += ' (' + x.substring(1,4);
+            if(x.length >= 4) f += ') ' + x.substring(4,7);
+            if(x.length >= 7) f += '-' + x.substring(7,9);
+            if(x.length >= 9) f += '-' + x.substring(9,11);
+            this.value = f;
+        });
+    }
 });
 </script>
 </body>
