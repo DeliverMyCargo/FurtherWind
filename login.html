@@ -360,15 +360,29 @@
             to{transform:translateX(0); opacity:1;}
         }
         @media (max-width:768px){
-            .profile-grid{
-                grid-template-columns:1fr;
-            }
-            .orders-grid{
-                grid-template-columns:1fr;
-            }
-            .addresses-grid{
-                grid-template-columns:1fr;
-            }
+            .profile-grid{grid-template-columns:1fr;}
+            .orders-grid{grid-template-columns:1fr;}
+            .addresses-grid{grid-template-columns:1fr;}
+        }
+        
+        /* Индикатор загрузки */
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--accent);
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            vertical-align: middle;
+            margin-right: 8px;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .btn-loading {
+            opacity: 0.7;
+            pointer-events: none;
         }
     </style>
 </head>
@@ -400,15 +414,15 @@
             <input type="email" id="loginEmail" placeholder="Email">
             <input type="password" id="loginPassword" placeholder="Пароль">
             <div id="loginError" class="auth-error"></div>
-            <button class="auth-btn" onclick="window.handleLogin()">Войти</button>
+            <button class="auth-btn" id="loginBtn" onclick="window.handleLogin()">Войти</button>
         </div>
         
         <div id="registerForm" class="auth-form">
             <h2>Регистрация</h2>
             <input type="text" id="registerName" placeholder="Имя">
-            <input type="tel" id="registerPhone" placeholder="Телефон (+7XXXXXXXXXX)">
+            <input type="tel" id="registerPhone" placeholder="Телефон">
             <input type="email" id="registerEmail" placeholder="Email">
-            <input type="password" id="registerPassword" placeholder="Пароль">
+            <input type="password" id="registerPassword" placeholder="Пароль (мин. 6 символов)">
             <div id="registerError" class="auth-error"></div>
             <div id="registerSuccess" class="auth-success"></div>
             <button class="auth-btn" id="registerBtn" onclick="window.handleRegister()">Зарегистрироваться</button>
@@ -473,6 +487,11 @@ const supabaseClient = supabase.createClient(
 );
 
 let currentUser = null;
+
+// Кэш для заказов
+let ordersCache = null;
+let ordersCacheTime = 0;
+const CACHE_DURATION = 60000; // 1 минута
 
 // ======================
 // ТЕМА
@@ -539,7 +558,7 @@ async function checkAuth() {
 }
 
 // ======================
-// РЕГИСТРАЦИЯ (простая)
+// РЕГИСТРАЦИЯ (с индикатором)
 // ======================
 window.handleRegister = async function() {
     const name = document.getElementById('registerName').value;
@@ -560,17 +579,18 @@ window.handleRegister = async function() {
     
     const cleanPhone = phone.replace(/\D/g,'');
     if (cleanPhone.length !== 11) {
-        errorDiv.textContent = 'Введите корректный номер телефона';
+        errorDiv.textContent = 'Введите корректный номер телефона (10 цифр)';
         return;
     }
     
     if (password.length < 6) {
-        errorDiv.textContent = 'Пароль должен быть не менее 6 символов';
+        errorDiv.textContent = 'Пароль не менее 6 символов';
         return;
     }
     
+    // Показываем загрузку
     btn.disabled = true;
-    btn.textContent = 'Регистрация...';
+    btn.innerHTML = '<span class="spinner"></span> Регистрация...';
     
     try {
         const { data, error } = await supabaseClient.auth.signUp({
@@ -589,24 +609,25 @@ window.handleRegister = async function() {
             });
         }
         
-        successDiv.innerHTML = `✅ Регистрация успешна! Проверьте почту и войдите.`;
+        successDiv.innerHTML = '✅ Регистрация успешна! Проверьте почту и войдите.';
         setTimeout(() => window.switchAuthTab('login'), 3000);
         
     } catch (error) {
         errorDiv.textContent = error.message;
     } finally {
         btn.disabled = false;
-        btn.textContent = 'Зарегистрироваться';
+        btn.innerHTML = 'Зарегистрироваться';
     }
 };
 
 // ======================
-// ВХОД
+// ВХОД (с индикатором)
 // ======================
 window.handleLogin = async function() {
     const email = document.getElementById('loginEmail').value;
     const password = document.getElementById('loginPassword').value;
     const errorDiv = document.getElementById('loginError');
+    const btn = document.getElementById('loginBtn');
     
     errorDiv.textContent = '';
     
@@ -614,6 +635,9 @@ window.handleLogin = async function() {
         errorDiv.textContent = 'Заполните все поля';
         return;
     }
+    
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Вход...';
     
     try {
         const { error } = await supabaseClient.auth.signInWithPassword({
@@ -628,6 +652,9 @@ window.handleLogin = async function() {
         
     } catch (error) {
         errorDiv.textContent = 'Неверный email или пароль';
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = 'Войти';
     }
 };
 
@@ -636,6 +663,7 @@ window.handleLogin = async function() {
 // ======================
 window.handleLogout = async function() {
     await supabaseClient.auth.signOut();
+    ordersCache = null;
     showNotification('Вы вышли');
     checkAuth();
 };
@@ -674,7 +702,7 @@ window.changePassword = async function() {
 };
 
 // ======================
-// УДАЛЕНИЕ АККАУНТА (простое и быстрое)
+// УДАЛЕНИЕ АККАУНТА
 // ======================
 window.deleteAccount = async function() {
     const { data: { session } } = await supabaseClient.auth.getSession();
@@ -687,10 +715,9 @@ window.deleteAccount = async function() {
     
     const btn = document.getElementById('deleteAccountBtn');
     btn.disabled = true;
-    btn.textContent = 'Удаление...';
+    btn.innerHTML = '<span class="spinner"></span> Удаление...';
     
     try {
-        // Удаляем всё через RPC
         await supabaseClient.rpc('delete_user_cascade', { target_user_id: session.user.id });
         await supabaseClient.auth.signOut();
         showNotification('Аккаунт удален');
@@ -698,18 +725,25 @@ window.deleteAccount = async function() {
     } catch (error) {
         showNotification('Ошибка: ' + error.message);
         btn.disabled = false;
-        btn.textContent = '🗑️ Удалить аккаунт';
+        btn.innerHTML = '🗑️ Удалить аккаунт';
     }
 };
 
 // ======================
-// ЗАГРУЗКА ЗАКАЗОВ
+// ЗАГРУЗКА ЗАКАЗОВ (с кэшем)
 // ======================
 async function loadOrders() {
     if (!currentUser) return;
     
     const grid = document.getElementById('ordersGrid');
-    grid.innerHTML = '<div class="loading">Загрузка...</div>';
+    
+    // Проверяем кэш
+    if (ordersCache && (Date.now() - ordersCacheTime) < CACHE_DURATION) {
+        renderOrders(ordersCache);
+        return;
+    }
+    
+    grid.innerHTML = '<div class="loading"><span class="spinner"></span> Загрузка заказов...</div>';
     
     try {
         const { data: orders, error } = await supabaseClient
@@ -721,48 +755,56 @@ async function loadOrders() {
         
         if (error) throw error;
         
-        if (!orders || orders.length === 0) {
-            grid.innerHTML = '<div style="text-align:center; padding:40px;">Нет заказов</div>';
-            return;
-        }
-        
-        grid.innerHTML = '';
-        
-        orders.forEach(order => {
-            const statusMap = {
-                'pending_payment': { class: 'status-pending_payment', text: 'Ожидает оплаты' },
-                'paid': { class: 'status-paid', text: 'Оплачен' },
-                'processing': { class: 'status-processing', text: 'В обработке' },
-                'shipped': { class: 'status-shipped', text: 'Отправлен' },
-                'delivered': { class: 'status-delivered', text: 'Доставлен' },
-                'cancelled': { class: 'status-cancelled', text: 'Отменен' }
-            };
-            const status = statusMap[order.status] || statusMap.pending_payment;
-            
-            const card = document.createElement('div');
-            card.className = 'order-card';
-            card.onclick = () => window.location.href = `order-detail.html?order=${order.order_number}`;
-            card.innerHTML = `
-                <div class="order-header">
-                    <span class="order-number">${order.order_number}</span>
-                    <span class="order-status ${status.class}">${status.text}</span>
-                </div>
-                <div class="order-info">
-                    <p>📅 ${new Date(order.created_at).toLocaleDateString()}</p>
-                    <p>📍 ${order.from_address}</p>
-                    <p>📍 ${order.to_address}</p>
-                </div>
-                <div class="order-price">${order.price.toLocaleString()} ₽</div>
-                <div class="order-actions">
-                    <button class="order-btn track" onclick="event.stopPropagation(); window.location.href='order-detail.html?order=${order.order_number}'">Подробнее</button>
-                </div>
-            `;
-            grid.appendChild(card);
-        });
+        ordersCache = orders;
+        ordersCacheTime = Date.now();
+        renderOrders(orders);
         
     } catch (error) {
         grid.innerHTML = '<div style="text-align:center; padding:40px;">Ошибка загрузки</div>';
     }
+}
+
+function renderOrders(orders) {
+    const grid = document.getElementById('ordersGrid');
+    
+    if (!orders || orders.length === 0) {
+        grid.innerHTML = '<div style="text-align:center; padding:40px;">У вас пока нет заказов</div>';
+        return;
+    }
+    
+    grid.innerHTML = '';
+    
+    orders.forEach(order => {
+        const statusMap = {
+            'pending_payment': { class: 'status-pending_payment', text: 'Ожидает оплаты' },
+            'paid': { class: 'status-paid', text: 'Оплачен' },
+            'processing': { class: 'status-processing', text: 'В обработке' },
+            'shipped': { class: 'status-shipped', text: 'Отправлен' },
+            'delivered': { class: 'status-delivered', text: 'Доставлен' },
+            'cancelled': { class: 'status-cancelled', text: 'Отменен' }
+        };
+        const status = statusMap[order.status] || statusMap.pending_payment;
+        
+        const card = document.createElement('div');
+        card.className = 'order-card';
+        card.onclick = () => window.location.href = `order-detail.html?order=${order.order_number}`;
+        card.innerHTML = `
+            <div class="order-header">
+                <span class="order-number">${order.order_number}</span>
+                <span class="order-status ${status.class}">${status.text}</span>
+            </div>
+            <div class="order-info">
+                <p>📅 ${new Date(order.created_at).toLocaleDateString()}</p>
+                <p>📍 ${order.from_address}</p>
+                <p>📍 ${order.to_address}</p>
+            </div>
+            <div class="order-price">${order.price.toLocaleString()} ₽</div>
+            <div class="order-actions">
+                <button class="order-btn track" onclick="event.stopPropagation(); window.location.href='order-detail.html?order=${order.order_number}'">Подробнее</button>
+            </div>
+        `;
+        grid.appendChild(card);
+    });
 }
 
 // ======================
@@ -772,7 +814,7 @@ async function loadAddresses() {
     if (!currentUser) return;
     
     const grid = document.getElementById('addressesGrid');
-    grid.innerHTML = '<div class="loading">Загрузка...</div>';
+    grid.innerHTML = '<div class="loading"><span class="spinner"></span> Загрузка...</div>';
     
     try {
         const { data: addresses, error } = await supabaseClient
