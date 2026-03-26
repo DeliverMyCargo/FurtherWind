@@ -760,14 +760,14 @@ async function loadOrders() {
         
         orders.forEach(order => {
             const statusMap = {
-                'pending_payment': { class: 'status-pending_payment', text: 'Ожидает оплаты' },
-                'paid': { class: 'status-paid', text: 'Оплачен' },
-                'processing': { class: 'status-processing', text: 'В обработке' },
-                'shipped': { class: 'status-shipped', text: 'Отправлен' },
-                'delivered': { class: 'status-delivered', text: 'Доставлен' },
-                'cancelled': { class: 'status-cancelled', text: 'Отменен' }
+                'pending_payment': { class: 'status-pending_payment', text: '⏳ Ожидает оплаты' },
+                'paid': { class: 'status-paid', text: '✅ Оплачен' },
+                'processing': { class: 'status-processing', text: '🔄 В обработке' },
+                'shipped': { class: 'status-shipped', text: '🚚 Отправлен' },
+                'delivered': { class: 'status-delivered', text: '📦 Доставлен' },
+                'cancelled': { class: 'status-cancelled', text: '❌ Отменен' }
             };
-            const status = statusMap[order.status] || { class: 'status-pending_payment', text: 'Ожидает оплаты' };
+            const status = statusMap[order.status] || { class: 'status-pending_payment', text: '⏳ Ожидает оплаты' };
             
             const cargoTypeText = {
                 'letter': 'Письмо',
@@ -781,8 +781,10 @@ async function loadOrders() {
             
             const card = document.createElement('div');
             card.className = 'order-card';
-            card.onclick = (e) => {
-                if(e.target.tagName !== 'BUTTON') showOrderDetails(order);
+            // ВАЖНО: Весь заказ кликабельный
+            card.style.cursor = 'pointer';
+            card.onclick = () => {
+                window.location.href = `order-detail.html?order=${order.order_number}`;
             };
             card.innerHTML = `
                 <div class="order-header">
@@ -799,7 +801,7 @@ async function loadOrders() {
                 <div class="order-actions">
                     ${canPay ? `<button class="order-btn pay" onclick="event.stopPropagation(); window.payOrder('${order.order_number}')">💳 Оплатить</button>` : ''}
                     ${canCancel ? `<button class="order-btn cancel" onclick="event.stopPropagation(); window.cancelOrder('${order.order_number}')">❌ Отменить</button>` : ''}
-                    <button class="order-btn track" onclick="event.stopPropagation(); window.trackOrder('${order.order_number}')">📍 Отследить</button>
+                    <button class="order-btn track" onclick="event.stopPropagation(); window.viewOrderDetails('${order.order_number}')">📍 Детали</button>
                     <button class="order-btn repeat" onclick="event.stopPropagation(); window.repeatOrder('${order.order_number}')">🔄 Повторить</button>
                 </div>
             `;
