@@ -322,6 +322,13 @@
             font-size: 14px;
             margin-bottom: 10px;
         }
+        .address-type {
+            font-size: 11px;
+            padding: 3px 8px;
+            background: var(--bg);
+            border-radius: 12px;
+            display: inline-block;
+        }
         .address-actions {
             display: flex;
             gap: 10px;
@@ -415,7 +422,7 @@
 </header>
 
 <div class="container cabinet">
-    <!-- Скелетон-загрузка (показывается, пока проверяется сессия) -->
+    <!-- Скелетон-загрузка -->
     <div id="skeletonLoader" class="auth-container" style="text-align:center;">
         <div class="spinner" style="width:40px; height:40px;"></div>
         <p style="margin-top:15px;">Загрузка...</p>
@@ -574,21 +581,12 @@ function switchCabinetTab(tabName, el) {
     document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
     el.classList.add('active');
     document.getElementById(tabName).classList.add('active');
-    
-    // Подгружаем данные только если они ещё не загружены
-    if (tabName === 'orders' && document.getElementById('ordersGrid').innerHTML.includes('Загрузка заказов')) {
-        loadOrders();
-    }
-    if (tabName === 'addresses' && document.getElementById('addressesGrid').innerHTML.includes('Загрузка адресов')) {
-        loadAddresses();
-    }
 }
 
 // =====================================================
-// ПРОВЕРКА СЕССИИ (ОДИН РАЗ ПРИ ЗАГРУЗКЕ)
+// ПРОВЕРКА СЕССИИ
 // =====================================================
 async function checkAuth() {
-    // Показываем скелетон
     document.getElementById('skeletonLoader').style.display = 'block';
     
     try {
@@ -603,7 +601,6 @@ async function checkAuth() {
                 .eq('id', session.user.id)
                 .single();
             
-            // Скрываем скелетон, показываем кабинет
             document.getElementById('skeletonLoader').style.display = 'none';
             document.getElementById('authContainer').style.display = 'none';
             document.getElementById('cabinetContainer').style.display = 'block';
@@ -613,11 +610,9 @@ async function checkAuth() {
             document.getElementById('profileEmail').value = session.user.email || '';
             document.getElementById('profilePhone').value = profile?.phone || '';
             
-            // Загружаем данные
             loadOrders();
             loadAddresses();
         } else {
-            // Скрываем скелетон, показываем форму входа
             document.getElementById('skeletonLoader').style.display = 'none';
             document.getElementById('authContainer').style.display = 'block';
             document.getElementById('cabinetContainer').style.display = 'none';
@@ -696,7 +691,7 @@ async function handleRegister() {
 }
 
 // =====================================================
-// ВХОД (БЫСТРЫЙ)
+// ВХОД
 // =====================================================
 async function handleLogin() {
     const email = document.getElementById('loginEmail').value;
@@ -730,7 +725,6 @@ async function handleLogin() {
             .eq('id', currentUser.id)
             .single();
         
-        // Показываем кабинет
         document.getElementById('authContainer').style.display = 'none';
         document.getElementById('cabinetContainer').style.display = 'block';
         document.getElementById('userGreeting').textContent = `Здравствуйте, ${profile?.full_name || currentUser.email || 'пользователь'}!`;
@@ -740,7 +734,7 @@ async function handleLogin() {
         
         showNotification('Успешный вход!');
         
-        // Сбрасываем кэш и загружаем данные
+        // Сбрасываем кэш
         ordersCache = null;
         addressesCache = null;
         loadOrders();
@@ -759,7 +753,7 @@ async function handleLogin() {
 }
 
 // =====================================================
-// ВЫХОД (БЫСТРЫЙ)
+// ВЫХОД
 // =====================================================
 async function handleLogout() {
     const btn = document.querySelector('.logout-btn');
@@ -884,7 +878,7 @@ async function deleteAccount() {
 }
 
 // =====================================================
-// ЗАГРУЗКА ЗАКАЗОВ (С КЭШЕМ)
+// ЗАГРУЗКА ЗАКАЗОВ
 // =====================================================
 async function loadOrders() {
     if (!currentUser) return;
@@ -970,7 +964,7 @@ function renderOrders(orders) {
 }
 
 // =====================================================
-// ЗАГРУЗКА АДРЕСОВ (С КЭШЕМ)
+// АДРЕСА (С МГНОВЕННЫМ ДОБАВЛЕНИЕМ)
 // =====================================================
 async function loadAddresses() {
     if (!currentUser) return;
@@ -1036,20 +1030,30 @@ async function addNewAddress() {
     const type = ['home', 'work', 'other'].includes(addressType) ? addressType : 'other';
     
     try {
-        const { error } = await supabaseClient
+        const { data, error } = await supabaseClient
             .from('saved_addresses')
             .insert({
                 user_id: currentUser.id,
                 address: address,
                 address_type: type
-            });
+            })
+            .select();
         
         if (error) throw error;
         
-        // Обновляем кэш
-        addressesCache = null;
+        // МГНОВЕННОЕ ОБНОВЛЕНИЕ: добавляем новый адрес в кэш и перерисовываем
+        if (data && data.length > 0) {
+            // Добавляем в начало кэша
+            if (!addressesCache) addressesCache = [];
+            addressesCache.unshift(data[0]);
+            renderAddresses(addressesCache);
+        } else {
+            // Если не получили данные назад, просто перезагружаем
+            addressesCache = null;
+            loadAddresses();
+        }
+        
         showNotification('Адрес добавлен');
-        loadAddresses();
         
     } catch (error) {
         showNotification('Ошибка: ' + error.message, true);
@@ -1067,10 +1071,15 @@ async function deleteAddress(id) {
         
         if (error) throw error;
         
-        // Обновляем кэш
-        addressesCache = null;
+        // МГНОВЕННОЕ ОБНОВЛЕНИЕ: удаляем из кэша и перерисовываем
+        if (addressesCache) {
+            addressesCache = addressesCache.filter(addr => addr.id !== id);
+            renderAddresses(addressesCache);
+        } else {
+            loadAddresses();
+        }
+        
         showNotification('Адрес удален');
-        loadAddresses();
         
     } catch (error) {
         showNotification('Ошибка: ' + error.message, true);
