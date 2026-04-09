@@ -317,6 +317,10 @@
             background: var(--card);
             border-radius: 10px;
             padding: 15px;
+            border-left: 3px solid transparent;
+        }
+        .address-card.default {
+            border-left-color: var(--accent);
         }
         .address-text {
             font-size: 14px;
@@ -422,13 +426,7 @@
 </header>
 
 <div class="container cabinet">
-    <!-- Скелетон-загрузка -->
-    <div id="skeletonLoader" class="auth-container" style="text-align:center;">
-        <div class="spinner" style="width:40px; height:40px;"></div>
-        <p style="margin-top:15px;">Загрузка...</p>
-    </div>
-    
-    <div id="authContainer" class="auth-container" style="display:none;">
+    <div id="authContainer" class="auth-container">
         <div class="auth-tabs">
             <div class="auth-tab active" onclick="switchAuthTab('login')">Вход</div>
             <div class="auth-tab" onclick="switchAuthTab('register')">Регистрация</div>
@@ -521,6 +519,32 @@ let addressesCache = null;
 let addressesCacheTime = 0;
 const CACHE_DURATION = 60000;
 
+// Функция для работы с куками
+function setCookie(name, value, days) {
+    let expires = "";
+    if (days) {
+        const date = new Date();
+        date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+        expires = "; expires=" + date.toUTCString();
+    }
+    document.cookie = name + "=" + (value || "") + expires + "; path=/";
+}
+
+function getCookie(name) {
+    const nameEQ = name + "=";
+    const ca = document.cookie.split(';');
+    for(let i = 0; i < ca.length; i++) {
+        let c = ca[i];
+        while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+        if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
+    }
+    return null;
+}
+
+function eraseCookie(name) {
+    document.cookie = name + '=; Max-Age=-99999999; path=/';
+}
+
 // =====================================================
 // ТЕМА
 // =====================================================
@@ -584,45 +608,45 @@ function switchCabinetTab(tabName, el) {
 }
 
 // =====================================================
-// ПРОВЕРКА СЕССИИ
+// ПРОВЕРКА СЕССИИ (БЫСТРАЯ, С ИСПОЛЬЗОВАНИЕМ КУКИ)
 // =====================================================
 async function checkAuth() {
-    document.getElementById('skeletonLoader').style.display = 'block';
+    // Сначала проверяем куку
+    const savedUser = getCookie('fw_user');
     
-    try {
-        const { data: { session } } = await supabaseClient.auth.getSession();
-        
-        if (session) {
-            currentUser = session.user;
+    if (savedUser) {
+        try {
+            const userData = JSON.parse(savedUser);
+            const { data: { session } } = await supabaseClient.auth.getSession();
             
-            const { data: profile } = await supabaseClient
-                .from('profiles')
-                .select('full_name, phone')
-                .eq('id', session.user.id)
-                .single();
-            
-            document.getElementById('skeletonLoader').style.display = 'none';
-            document.getElementById('authContainer').style.display = 'none';
-            document.getElementById('cabinetContainer').style.display = 'block';
-            
-            document.getElementById('userGreeting').textContent = `Здравствуйте, ${profile?.full_name || session.user.email || 'пользователь'}!`;
-            document.getElementById('profileName').value = profile?.full_name || '';
-            document.getElementById('profileEmail').value = session.user.email || '';
-            document.getElementById('profilePhone').value = profile?.phone || '';
-            
-            loadOrders();
-            loadAddresses();
-        } else {
-            document.getElementById('skeletonLoader').style.display = 'none';
-            document.getElementById('authContainer').style.display = 'block';
-            document.getElementById('cabinetContainer').style.display = 'none';
+            if (session) {
+                currentUser = session.user;
+                
+                const { data: profile } = await supabaseClient
+                    .from('profiles')
+                    .select('full_name, phone')
+                    .eq('id', session.user.id)
+                    .single();
+                
+                document.getElementById('authContainer').style.display = 'none';
+                document.getElementById('cabinetContainer').style.display = 'block';
+                document.getElementById('userGreeting').textContent = `Здравствуйте, ${profile?.full_name || session.user.email || 'пользователь'}!`;
+                document.getElementById('profileName').value = profile?.full_name || '';
+                document.getElementById('profileEmail').value = session.user.email || '';
+                document.getElementById('profilePhone').value = profile?.phone || '';
+                
+                loadOrders();
+                loadAddresses();
+                return;
+            }
+        } catch(e) {
+            eraseCookie('fw_user');
         }
-    } catch (e) {
-        console.error('Ошибка проверки сессии:', e);
-        document.getElementById('skeletonLoader').style.display = 'none';
-        document.getElementById('authContainer').style.display = 'block';
-        document.getElementById('cabinetContainer').style.display = 'none';
     }
+    
+    // Если куки нет или сессия не активна — показываем форму входа
+    document.getElementById('authContainer').style.display = 'block';
+    document.getElementById('cabinetContainer').style.display = 'none';
 }
 
 // =====================================================
@@ -691,7 +715,7 @@ async function handleRegister() {
 }
 
 // =====================================================
-// ВХОД
+// ВХОД (С СОХРАНЕНИЕМ КУКИ)
 // =====================================================
 async function handleLogin() {
     const email = document.getElementById('loginEmail').value;
@@ -719,6 +743,9 @@ async function handleLogin() {
         
         currentUser = data.user;
         
+        // Сохраняем в куку на 7 дней
+        setCookie('fw_user', JSON.stringify({ id: currentUser.id, email: currentUser.email }), 7);
+        
         const { data: profile } = await supabaseClient
             .from('profiles')
             .select('full_name, phone')
@@ -734,7 +761,6 @@ async function handleLogin() {
         
         showNotification('Успешный вход!');
         
-        // Сбрасываем кэш
         ordersCache = null;
         addressesCache = null;
         loadOrders();
@@ -753,7 +779,7 @@ async function handleLogin() {
 }
 
 // =====================================================
-// ВЫХОД
+// ВЫХОД (С УДАЛЕНИЕМ КУКИ)
 // =====================================================
 async function handleLogout() {
     const btn = document.querySelector('.logout-btn');
@@ -762,6 +788,7 @@ async function handleLogout() {
     
     try {
         await supabaseClient.auth.signOut();
+        eraseCookie('fw_user');
         ordersCache = null;
         addressesCache = null;
         currentUser = null;
@@ -867,6 +894,7 @@ async function deleteAccount() {
         if (rpcError) throw rpcError;
         
         await supabaseClient.auth.signOut();
+        eraseCookie('fw_user');
         showNotification('Аккаунт успешно удален');
         setTimeout(() => window.location.href = 'index.html', 1500);
         
@@ -964,7 +992,7 @@ function renderOrders(orders) {
 }
 
 // =====================================================
-// АДРЕСА (С МГНОВЕННЫМ ДОБАВЛЕНИЕМ)
+// АДРЕСА (С МГНОВЕННЫМ ДОБАВЛЕНИЕМ/УДАЛЕНИЕМ)
 // =====================================================
 async function loadAddresses() {
     if (!currentUser) return;
@@ -1010,11 +1038,12 @@ function renderAddresses(addresses) {
     addresses.forEach(addr => {
         const typeText = { 'home': '🏠 Дом', 'work': '💼 Работа', 'other': '📍 Другое' }[addr.address_type] || '📍 Другое';
         const card = document.createElement('div');
-        card.className = 'address-card';
+        card.className = `address-card ${addr.is_default ? 'default' : ''}`;
         card.innerHTML = `
             <div class="address-text">${addr.address}</div>
             <div class="address-type">${typeText}</div>
             <div class="address-actions">
+                ${!addr.is_default ? `<button onclick="setDefaultAddress('${addr.id}')">★ По умолчанию</button>` : ''}
                 <button onclick="deleteAddress('${addr.id}')">🗑️ Удалить</button>
             </div>
         `;
@@ -1030,30 +1059,65 @@ async function addNewAddress() {
     const type = ['home', 'work', 'other'].includes(addressType) ? addressType : 'other';
     
     try {
+        // Проверяем, есть ли уже адреса
+        const hasAddresses = addressesCache && addressesCache.length > 0;
+        
         const { data, error } = await supabaseClient
             .from('saved_addresses')
             .insert({
                 user_id: currentUser.id,
                 address: address,
-                address_type: type
+                address_type: type,
+                is_default: !hasAddresses // Если это первый адрес — делаем его основным
             })
             .select();
         
         if (error) throw error;
         
-        // МГНОВЕННОЕ ОБНОВЛЕНИЕ: добавляем новый адрес в кэш и перерисовываем
+        // МГНОВЕННОЕ ОБНОВЛЕНИЕ
         if (data && data.length > 0) {
-            // Добавляем в начало кэша
             if (!addressesCache) addressesCache = [];
             addressesCache.unshift(data[0]);
             renderAddresses(addressesCache);
         } else {
-            // Если не получили данные назад, просто перезагружаем
             addressesCache = null;
             loadAddresses();
         }
         
         showNotification('Адрес добавлен');
+        
+    } catch (error) {
+        showNotification('Ошибка: ' + error.message, true);
+    }
+}
+
+async function setDefaultAddress(id) {
+    try {
+        // Сбрасываем у всех
+        await supabaseClient
+            .from('saved_addresses')
+            .update({ is_default: false })
+            .eq('user_id', currentUser.id);
+        
+        // Устанавливаем выбранный
+        const { error } = await supabaseClient
+            .from('saved_addresses')
+            .update({ is_default: true })
+            .eq('id', id);
+        
+        if (error) throw error;
+        
+        // МГНОВЕННОЕ ОБНОВЛЕНИЕ
+        if (addressesCache) {
+            addressesCache.forEach(addr => {
+                addr.is_default = (addr.id === id);
+            });
+            renderAddresses(addressesCache);
+        } else {
+            loadAddresses();
+        }
+        
+        showNotification('Адрес по умолчанию изменен');
         
     } catch (error) {
         showNotification('Ошибка: ' + error.message, true);
@@ -1071,7 +1135,7 @@ async function deleteAddress(id) {
         
         if (error) throw error;
         
-        // МГНОВЕННОЕ ОБНОВЛЕНИЕ: удаляем из кэша и перерисовываем
+        // МГНОВЕННОЕ ОБНОВЛЕНИЕ
         if (addressesCache) {
             addressesCache = addressesCache.filter(addr => addr.id !== id);
             renderAddresses(addressesCache);
