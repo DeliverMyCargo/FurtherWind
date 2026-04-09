@@ -415,7 +415,13 @@
 </header>
 
 <div class="container cabinet">
-    <div id="authContainer" class="auth-container">
+    <!-- Скелетон-загрузка (показывается, пока проверяется сессия) -->
+    <div id="skeletonLoader" class="auth-container" style="text-align:center;">
+        <div class="spinner" style="width:40px; height:40px;"></div>
+        <p style="margin-top:15px;">Загрузка...</p>
+    </div>
+    
+    <div id="authContainer" class="auth-container" style="display:none;">
         <div class="auth-tabs">
             <div class="auth-tab active" onclick="switchAuthTab('login')">Вход</div>
             <div class="auth-tab" onclick="switchAuthTab('register')">Регистрация</div>
@@ -480,11 +486,11 @@
         </div>
         
         <div id="orders" class="tab-content">
-            <div class="orders-grid" id="ordersGrid"><div class="loading">Загрузка...</div></div>
+            <div class="orders-grid" id="ordersGrid"><div class="loading">Загрузка заказов...</div></div>
         </div>
         
         <div id="addresses" class="tab-content">
-            <div class="addresses-grid" id="addressesGrid"><div class="loading">Загрузка...</div></div>
+            <div class="addresses-grid" id="addressesGrid"><div class="loading">Загрузка адресов...</div></div>
             <div class="add-address-btn" onclick="addNewAddress()">+ Добавить новый адрес</div>
         </div>
     </div>
@@ -504,6 +510,8 @@ const supabaseClient = supabase.createClient(
 let currentUser = null;
 let ordersCache = null;
 let ordersCacheTime = 0;
+let addressesCache = null;
+let addressesCacheTime = 0;
 const CACHE_DURATION = 60000;
 
 // =====================================================
@@ -566,12 +574,23 @@ function switchCabinetTab(tabName, el) {
     document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
     el.classList.add('active');
     document.getElementById(tabName).classList.add('active');
+    
+    // Подгружаем данные только если они ещё не загружены
+    if (tabName === 'orders' && document.getElementById('ordersGrid').innerHTML.includes('Загрузка заказов')) {
+        loadOrders();
+    }
+    if (tabName === 'addresses' && document.getElementById('addressesGrid').innerHTML.includes('Загрузка адресов')) {
+        loadAddresses();
+    }
 }
 
 // =====================================================
-// ПРОВЕРКА СЕССИИ
+// ПРОВЕРКА СЕССИИ (ОДИН РАЗ ПРИ ЗАГРУЗКЕ)
 // =====================================================
 async function checkAuth() {
+    // Показываем скелетон
+    document.getElementById('skeletonLoader').style.display = 'block';
+    
     try {
         const { data: { session } } = await supabaseClient.auth.getSession();
         
@@ -584,21 +603,28 @@ async function checkAuth() {
                 .eq('id', session.user.id)
                 .single();
             
+            // Скрываем скелетон, показываем кабинет
+            document.getElementById('skeletonLoader').style.display = 'none';
             document.getElementById('authContainer').style.display = 'none';
             document.getElementById('cabinetContainer').style.display = 'block';
+            
             document.getElementById('userGreeting').textContent = `Здравствуйте, ${profile?.full_name || session.user.email || 'пользователь'}!`;
             document.getElementById('profileName').value = profile?.full_name || '';
             document.getElementById('profileEmail').value = session.user.email || '';
             document.getElementById('profilePhone').value = profile?.phone || '';
             
+            // Загружаем данные
             loadOrders();
             loadAddresses();
         } else {
+            // Скрываем скелетон, показываем форму входа
+            document.getElementById('skeletonLoader').style.display = 'none';
             document.getElementById('authContainer').style.display = 'block';
             document.getElementById('cabinetContainer').style.display = 'none';
         }
     } catch (e) {
         console.error('Ошибка проверки сессии:', e);
+        document.getElementById('skeletonLoader').style.display = 'none';
         document.getElementById('authContainer').style.display = 'block';
         document.getElementById('cabinetContainer').style.display = 'none';
     }
@@ -670,7 +696,7 @@ async function handleRegister() {
 }
 
 // =====================================================
-// ВХОД (БЫСТРЫЙ, БЕЗ ПЕРЕЗАГРУЗКИ)
+// ВХОД (БЫСТРЫЙ)
 // =====================================================
 async function handleLogin() {
     const email = document.getElementById('loginEmail').value;
@@ -696,10 +722,8 @@ async function handleLogin() {
         
         if (error) throw error;
         
-        // Обновляем currentUser
         currentUser = data.user;
         
-        // Загружаем профиль
         const { data: profile } = await supabaseClient
             .from('profiles')
             .select('full_name, phone')
@@ -716,7 +740,9 @@ async function handleLogin() {
         
         showNotification('Успешный вход!');
         
-        // Загружаем данные
+        // Сбрасываем кэш и загружаем данные
+        ordersCache = null;
+        addressesCache = null;
         loadOrders();
         loadAddresses();
         
@@ -743,6 +769,7 @@ async function handleLogout() {
     try {
         await supabaseClient.auth.signOut();
         ordersCache = null;
+        addressesCache = null;
         currentUser = null;
         
         document.getElementById('authContainer').style.display = 'block';
@@ -857,7 +884,7 @@ async function deleteAccount() {
 }
 
 // =====================================================
-// ЗАГРУЗКА ЗАКАЗОВ
+// ЗАГРУЗКА ЗАКАЗОВ (С КЭШЕМ)
 // =====================================================
 async function loadOrders() {
     if (!currentUser) return;
@@ -943,13 +970,19 @@ function renderOrders(orders) {
 }
 
 // =====================================================
-// АДРЕСА
+// ЗАГРУЗКА АДРЕСОВ (С КЭШЕМ)
 // =====================================================
 async function loadAddresses() {
     if (!currentUser) return;
     
     const grid = document.getElementById('addressesGrid');
-    grid.innerHTML = '<div class="loading"><span class="spinner"></span> Загрузка...</div>';
+    
+    if (addressesCache && (Date.now() - addressesCacheTime) < CACHE_DURATION) {
+        renderAddresses(addressesCache);
+        return;
+    }
+    
+    grid.innerHTML = '<div class="loading"><span class="spinner"></span> Загрузка адресов...</div>';
     
     try {
         const { data: addresses, error } = await supabaseClient
@@ -960,31 +993,39 @@ async function loadAddresses() {
         
         if (error) throw error;
         
-        if (!addresses || addresses.length === 0) {
-            grid.innerHTML = '<div style="text-align:center; padding:40px;">У вас пока нет сохранённых адресов</div>';
-            return;
-        }
-        
-        grid.innerHTML = '';
-        
-        addresses.forEach(addr => {
-            const typeText = { 'home': '🏠 Дом', 'work': '💼 Работа', 'other': '📍 Другое' }[addr.address_type] || '📍 Другое';
-            const card = document.createElement('div');
-            card.className = 'address-card';
-            card.innerHTML = `
-                <div class="address-text">${addr.address}</div>
-                <div class="address-type">${typeText}</div>
-                <div class="address-actions">
-                    <button onclick="deleteAddress('${addr.id}')">🗑️ Удалить</button>
-                </div>
-            `;
-            grid.appendChild(card);
-        });
+        addressesCache = addresses;
+        addressesCacheTime = Date.now();
+        renderAddresses(addresses);
         
     } catch (error) {
         console.error('Ошибка загрузки адресов:', error);
         grid.innerHTML = '<div class="loading">Ошибка загрузки адресов</div>';
     }
+}
+
+function renderAddresses(addresses) {
+    const grid = document.getElementById('addressesGrid');
+    
+    if (!addresses || addresses.length === 0) {
+        grid.innerHTML = '<div style="text-align:center; padding:40px;">У вас пока нет сохранённых адресов</div>';
+        return;
+    }
+    
+    grid.innerHTML = '';
+    
+    addresses.forEach(addr => {
+        const typeText = { 'home': '🏠 Дом', 'work': '💼 Работа', 'other': '📍 Другое' }[addr.address_type] || '📍 Другое';
+        const card = document.createElement('div');
+        card.className = 'address-card';
+        card.innerHTML = `
+            <div class="address-text">${addr.address}</div>
+            <div class="address-type">${typeText}</div>
+            <div class="address-actions">
+                <button onclick="deleteAddress('${addr.id}')">🗑️ Удалить</button>
+            </div>
+        `;
+        grid.appendChild(card);
+    });
 }
 
 async function addNewAddress() {
@@ -1005,6 +1046,8 @@ async function addNewAddress() {
         
         if (error) throw error;
         
+        // Обновляем кэш
+        addressesCache = null;
         showNotification('Адрес добавлен');
         loadAddresses();
         
@@ -1024,6 +1067,8 @@ async function deleteAddress(id) {
         
         if (error) throw error;
         
+        // Обновляем кэш
+        addressesCache = null;
         showNotification('Адрес удален');
         loadAddresses();
         
