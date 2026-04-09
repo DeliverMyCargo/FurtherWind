@@ -379,7 +379,7 @@
         }
         @keyframes slideIn {
             from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(0%); opacity: 1; }
         }
         
         footer {
@@ -402,7 +402,7 @@
 <header>
     <div class="container header-inner">
         <div class="logo-block" onclick="window.location='index.html'">
-            <img src="images/logo.png" onerror="this.style.display='none'">
+            <img src="images/logo.jpg" onerror="this.style.display='none'">
             <h2>FurtherWind</h2>
         </div>
         <nav>
@@ -569,7 +569,7 @@ function switchCabinetTab(tabName, el) {
 }
 
 // =====================================================
-// ПРОВЕРКА СЕССИИ (ОБНОВЛЕНА)
+// ПРОВЕРКА СЕССИИ
 // =====================================================
 async function checkAuth() {
     try {
@@ -584,7 +584,6 @@ async function checkAuth() {
                 .eq('id', session.user.id)
                 .single();
             
-            // Показываем кабинет
             document.getElementById('authContainer').style.display = 'none';
             document.getElementById('cabinetContainer').style.display = 'block';
             document.getElementById('userGreeting').textContent = `Здравствуйте, ${profile?.full_name || session.user.email || 'пользователь'}!`;
@@ -592,7 +591,6 @@ async function checkAuth() {
             document.getElementById('profileEmail').value = session.user.email || '';
             document.getElementById('profilePhone').value = profile?.phone || '';
             
-            // Загружаем данные
             loadOrders();
             loadAddresses();
         } else {
@@ -641,21 +639,6 @@ async function handleRegister() {
     btn.innerHTML = '<span class="spinner"></span> Регистрация...';
     
     try {
-        // Проверяем, существует ли пользователь с таким email
-        const { data: existing } = await supabaseClient
-            .from('profiles')
-            .select('email')
-            .eq('email', email)
-            .maybeSingle();
-        
-        if (existing) {
-            errorDiv.textContent = 'Пользователь с таким email уже существует';
-            btn.disabled = false;
-            btn.innerHTML = 'Зарегистрироваться';
-            return;
-        }
-        
-        // Регистрация
         const { data, error } = await supabaseClient.auth.signUp({
             email: email,
             password: password,
@@ -687,7 +670,7 @@ async function handleRegister() {
 }
 
 // =====================================================
-// ВХОД (ИСПРАВЛЕН)
+// ВХОД (БЫСТРЫЙ, БЕЗ ПЕРЕЗАГРУЗКИ)
 // =====================================================
 async function handleLogin() {
     const email = document.getElementById('loginEmail').value;
@@ -713,12 +696,29 @@ async function handleLogin() {
         
         if (error) throw error;
         
+        // Обновляем currentUser
+        currentUser = data.user;
+        
+        // Загружаем профиль
+        const { data: profile } = await supabaseClient
+            .from('profiles')
+            .select('full_name, phone')
+            .eq('id', currentUser.id)
+            .single();
+        
+        // Показываем кабинет
+        document.getElementById('authContainer').style.display = 'none';
+        document.getElementById('cabinetContainer').style.display = 'block';
+        document.getElementById('userGreeting').textContent = `Здравствуйте, ${profile?.full_name || currentUser.email || 'пользователь'}!`;
+        document.getElementById('profileName').value = profile?.full_name || '';
+        document.getElementById('profileEmail').value = currentUser.email || '';
+        document.getElementById('profilePhone').value = profile?.phone || '';
+        
         showNotification('Успешный вход!');
         
-        // Ждём 500 мс для обновления сессии и перезагружаем страницу
-        setTimeout(() => {
-            window.location.reload();
-        }, 500);
+        // Загружаем данные
+        loadOrders();
+        loadAddresses();
         
     } catch (error) {
         if (error.message.includes('Email not confirmed')) {
@@ -726,13 +726,14 @@ async function handleLogin() {
         } else {
             errorDiv.textContent = 'Неверный email или пароль';
         }
+    } finally {
         btn.disabled = false;
         btn.innerHTML = 'Войти';
     }
 }
 
 // =====================================================
-// ВЫХОД (ИСПРАВЛЕН)
+// ВЫХОД (БЫСТРЫЙ)
 // =====================================================
 async function handleLogout() {
     const btn = document.querySelector('.logout-btn');
@@ -742,15 +743,16 @@ async function handleLogout() {
     try {
         await supabaseClient.auth.signOut();
         ordersCache = null;
-        showNotification('Вы вышли из системы');
+        currentUser = null;
         
-        // Перезагружаем страницу для сброса состояния
-        setTimeout(() => {
-            window.location.reload();
-        }, 500);
+        document.getElementById('authContainer').style.display = 'block';
+        document.getElementById('cabinetContainer').style.display = 'none';
+        
+        showNotification('Вы вышли из системы');
         
     } catch (error) {
         showNotification('Ошибка: ' + error.message, true);
+    } finally {
         btn.disabled = false;
         btn.innerHTML = 'Выйти';
     }
@@ -814,7 +816,7 @@ async function changePassword() {
 }
 
 // =====================================================
-// УДАЛЕНИЕ АККАУНТА (ИСПРАВЛЕНО)
+// УДАЛЕНИЕ АККАУНТА
 // =====================================================
 async function deleteAccount() {
     const { data: { session } } = await supabaseClient.auth.getSession();
@@ -1034,7 +1036,6 @@ async function deleteAddress(id) {
 // ИНИЦИАЛИЗАЦИЯ
 // =====================================================
 document.addEventListener('DOMContentLoaded', function() {
-    // Маска для телефона
     const phoneInput = document.getElementById('profilePhone');
     if (phoneInput) {
         phoneInput.addEventListener('input', () => formatPhone(phoneInput));
