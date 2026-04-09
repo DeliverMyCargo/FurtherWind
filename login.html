@@ -39,7 +39,6 @@
         }
         .container { width: 1200px; max-width: 95%; margin: auto; }
         
-        /* Шапка */
         header {
             background: var(--header);
             padding: 15px 0;
@@ -84,10 +83,8 @@
             margin-right: 5px;
         }
         
-        /* Контент */
         .cabinet { flex: 1; padding: 40px 0; }
         
-        /* Формы входа/регистрации */
         .auth-container {
             max-width: 450px;
             margin: 50px auto;
@@ -153,7 +150,6 @@
         .auth-error { color: var(--danger); font-size: 14px; margin: 10px 0; text-align: center; }
         .auth-success { color: var(--success); font-size: 14px; margin: 10px 0; text-align: center; }
         
-        /* Кабинет */
         .cabinet-header {
             display: flex;
             justify-content: space-between;
@@ -179,7 +175,6 @@
             gap: 5px;
         }
         
-        /* Табы */
         .tabs {
             display: flex;
             gap: 10px;
@@ -203,7 +198,6 @@
         .tab-content { display: none; }
         .tab-content.active { display: block; }
         
-        /* Профиль */
         .profile-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -248,7 +242,6 @@
             margin-top: 10px;
         }
         
-        /* Заказы */
         .orders-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
@@ -315,7 +308,6 @@
             color: #fff;
         }
         
-        /* Адреса */
         .addresses-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -354,7 +346,6 @@
             font-weight: bold;
         }
         
-        /* Индикаторы загрузки */
         .spinner {
             display: inline-block;
             width: 20px;
@@ -375,7 +366,6 @@
             color: var(--accent);
         }
         
-        /* Уведомления */
         .notification-popup {
             position: fixed;
             top: 20px;
@@ -425,7 +415,6 @@
 </header>
 
 <div class="container cabinet">
-    <!-- Формы входа/регистрации -->
     <div id="authContainer" class="auth-container">
         <div class="auth-tabs">
             <div class="auth-tab active" onclick="switchAuthTab('login')">Вход</div>
@@ -452,7 +441,6 @@
         </div>
     </div>
     
-    <!-- Кабинет -->
     <div id="cabinetContainer" style="display:none;">
         <div class="cabinet-header">
             <div class="cabinet-title">
@@ -470,7 +458,6 @@
             <div class="tab" onclick="switchCabinetTab('addresses', this)">📍 Сохранённые адреса</div>
         </div>
         
-        <!-- Профиль -->
         <div id="profile" class="tab-content active">
             <div class="profile-grid">
                 <div class="profile-section">
@@ -492,12 +479,10 @@
             </div>
         </div>
         
-        <!-- Заказы -->
         <div id="orders" class="tab-content">
             <div class="orders-grid" id="ordersGrid"><div class="loading">Загрузка...</div></div>
         </div>
         
-        <!-- Адреса -->
         <div id="addresses" class="tab-content">
             <div class="addresses-grid" id="addressesGrid"><div class="loading">Загрузка...</div></div>
             <div class="add-address-btn" onclick="addNewAddress()">+ Добавить новый адрес</div>
@@ -519,7 +504,7 @@ const supabaseClient = supabase.createClient(
 let currentUser = null;
 let ordersCache = null;
 let ordersCacheTime = 0;
-const CACHE_DURATION = 60000; // 1 минута
+const CACHE_DURATION = 60000;
 
 // =====================================================
 // ТЕМА
@@ -546,16 +531,6 @@ function showNotification(message, isError = false) {
     notif.textContent = message;
     document.body.appendChild(notif);
     setTimeout(() => notif.remove(), 3000);
-}
-
-function setLoading(btn, isLoading) {
-    if (isLoading) {
-        btn.disabled = true;
-        btn.innerHTML = '<span class="spinner"></span> Загрузка...';
-    } else {
-        btn.disabled = false;
-        btn.innerHTML = btn.getAttribute('data-original') || btn.textContent;
-    }
 }
 
 function formatPhone(input) {
@@ -594,19 +569,22 @@ function switchCabinetTab(tabName, el) {
 }
 
 // =====================================================
-// ПРОВЕРКА СЕССИИ
+// ПРОВЕРКА СЕССИИ (ОБНОВЛЕНА)
 // =====================================================
 async function checkAuth() {
     try {
         const { data: { session } } = await supabaseClient.auth.getSession();
+        
         if (session) {
             currentUser = session.user;
+            
             const { data: profile } = await supabaseClient
                 .from('profiles')
                 .select('full_name, phone')
                 .eq('id', session.user.id)
                 .single();
             
+            // Показываем кабинет
             document.getElementById('authContainer').style.display = 'none';
             document.getElementById('cabinetContainer').style.display = 'block';
             document.getElementById('userGreeting').textContent = `Здравствуйте, ${profile?.full_name || session.user.email || 'пользователь'}!`;
@@ -614,6 +592,7 @@ async function checkAuth() {
             document.getElementById('profileEmail').value = session.user.email || '';
             document.getElementById('profilePhone').value = profile?.phone || '';
             
+            // Загружаем данные
             loadOrders();
             loadAddresses();
         } else {
@@ -708,7 +687,7 @@ async function handleRegister() {
 }
 
 // =====================================================
-// ВХОД
+// ВХОД (ИСПРАВЛЕН)
 // =====================================================
 async function handleLogin() {
     const email = document.getElementById('loginEmail').value;
@@ -727,7 +706,7 @@ async function handleLogin() {
     btn.innerHTML = '<span class="spinner"></span> Вход...';
     
     try {
-        const { error } = await supabaseClient.auth.signInWithPassword({
+        const { data, error } = await supabaseClient.auth.signInWithPassword({
             email: email,
             password: password
         });
@@ -735,7 +714,11 @@ async function handleLogin() {
         if (error) throw error;
         
         showNotification('Успешный вход!');
-        checkAuth();
+        
+        // Ждём 500 мс для обновления сессии и перезагружаем страницу
+        setTimeout(() => {
+            window.location.reload();
+        }, 500);
         
     } catch (error) {
         if (error.message.includes('Email not confirmed')) {
@@ -743,20 +726,34 @@ async function handleLogin() {
         } else {
             errorDiv.textContent = 'Неверный email или пароль';
         }
-    } finally {
         btn.disabled = false;
         btn.innerHTML = 'Войти';
     }
 }
 
 // =====================================================
-// ВЫХОД
+// ВЫХОД (ИСПРАВЛЕН)
 // =====================================================
 async function handleLogout() {
-    await supabaseClient.auth.signOut();
-    ordersCache = null;
-    showNotification('Вы вышли из системы');
-    checkAuth();
+    const btn = document.querySelector('.logout-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Выход...';
+    
+    try {
+        await supabaseClient.auth.signOut();
+        ordersCache = null;
+        showNotification('Вы вышли из системы');
+        
+        // Перезагружаем страницу для сброса состояния
+        setTimeout(() => {
+            window.location.reload();
+        }, 500);
+        
+    } catch (error) {
+        showNotification('Ошибка: ' + error.message, true);
+        btn.disabled = false;
+        btn.innerHTML = 'Выйти';
+    }
 }
 
 // =====================================================
@@ -817,7 +814,7 @@ async function changePassword() {
 }
 
 // =====================================================
-// УДАЛЕНИЕ АККАУНТА
+// УДАЛЕНИЕ АККАУНТА (ИСПРАВЛЕНО)
 // =====================================================
 async function deleteAccount() {
     const { data: { session } } = await supabaseClient.auth.getSession();
@@ -840,7 +837,6 @@ async function deleteAccount() {
     btn.innerHTML = '<span class="spinner"></span> Удаление...';
     
     try {
-        // Вызываем RPC функцию каскадного удаления
         const { error: rpcError } = await supabaseClient.rpc('delete_user_cascade', {
             target_user_id: session.user.id
         });
@@ -859,14 +855,13 @@ async function deleteAccount() {
 }
 
 // =====================================================
-// ЗАГРУЗКА ЗАКАЗОВ (с кэшем)
+// ЗАГРУЗКА ЗАКАЗОВ
 // =====================================================
 async function loadOrders() {
     if (!currentUser) return;
     
     const grid = document.getElementById('ordersGrid');
     
-    // Проверяем кэш
     if (ordersCache && (Date.now() - ordersCacheTime) < CACHE_DURATION) {
         renderOrders(ordersCache);
         return;
@@ -946,7 +941,7 @@ function renderOrders(orders) {
 }
 
 // =====================================================
-// ЗАГРУЗКА АДРЕСОВ
+// АДРЕСА
 // =====================================================
 async function loadAddresses() {
     if (!currentUser) return;
@@ -1039,13 +1034,12 @@ async function deleteAddress(id) {
 // ИНИЦИАЛИЗАЦИЯ
 // =====================================================
 document.addEventListener('DOMContentLoaded', function() {
-    // Маска для телефона в профиле
+    // Маска для телефона
     const phoneInput = document.getElementById('profilePhone');
     if (phoneInput) {
         phoneInput.addEventListener('input', () => formatPhone(phoneInput));
     }
     
-    // Маска для телефона при регистрации
     const regPhoneInput = document.getElementById('registerPhone');
     if (regPhoneInput) {
         regPhoneInput.addEventListener('input', () => formatPhone(regPhoneInput));
